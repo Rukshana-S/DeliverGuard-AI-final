@@ -7,7 +7,7 @@ const logger = require('./utils/logger');
 
 const PORT = process.env.PORT || 5000;
 
-/* Catch unhandled errors so the process never silently dies */
+/* Handle unexpected errors */
 process.on('unhandledRejection', (err) => {
   logger.error(`Unhandled Rejection: ${err.message}`);
 });
@@ -20,8 +20,6 @@ connectDB()
   .then(() => {
     app.listen(PORT, "0.0.0.0", () => {
       logger.info(`Server running on port ${PORT}`);
-      
-      // Start background monitoring job
       startRiskMonitor();
     });
   })
