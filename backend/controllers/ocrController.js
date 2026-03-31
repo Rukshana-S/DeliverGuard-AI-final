@@ -16,12 +16,11 @@ const extractIncome = async (req, res) => {
         apikey: process.env.OCR_API_KEY,
         base64Image: `data:${req.file.mimetype};base64,${base64Image}`,
         language: "eng",
+        OCREngine: "2",
+        isTable: "true",
+        scale: "true",
       }),
-      {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      }
+      { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
     );
 
     const parsedText =
@@ -33,13 +32,18 @@ const extractIncome = async (req, res) => {
     let amount = 0;
 
     const phonePattern = /\+?\d[\d\s]{8,}/;
-    const parseAmount = (str) => parseInt(str.replace(/,/g, ''));
+    const parseAmount = (str) => {
+      const cleaned = str.replace(/,/g, '');
+      // 3-digit amounts read correctly, 4+ digit amounts have extra prefix digit from ₹ misread
+      if (cleaned.length > 3) return parseInt(cleaned.slice(1));
+      return parseInt(cleaned);
+    };
     const amountPattern = /₹\s?([\d,]+)/;
 
-    // Strategy 1: find ₹ symbol followed by number anywhere in text (Google Pay / UPI style)
+    // Strategy 1: find line with only digits/commas (the amount line on UPI/GPay receipts)
     for (const line of lines) {
       if (phonePattern.test(line)) continue;
-      const val = line.match(amountPattern);
+      const val = line.match(/^[^a-zA-Z]*?([\d,]{3,7})\s*$/);
       if (val) { amount = parseAmount(val[1]); break; }
     }
 
