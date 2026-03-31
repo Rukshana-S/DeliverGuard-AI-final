@@ -29,9 +29,29 @@ const extractIncome = async (req, res) => {
 
     console.log("[OCR TEXT]:", parsedText);
 
-    // 🔍 Extract ₹ amount
-    const match = parsedText.match(/₹?\s?(\d+)/);
-    const amount = match ? parseInt(match[1]) : 0;
+    // 🔍 Extract earnings amount — look for number after keywords first
+    const lines = parsedText.split(/\n/);
+    let amount = 0;
+
+    // Strategy 1: find line with earnings keywords and grab number from next line or same line
+    const earningsKeywords = /total|earning|earned|amount|payment|paid|completed|weekly|income/i;
+    for (let i = 0; i < lines.length; i++) {
+      if (earningsKeywords.test(lines[i])) {
+        // check same line first, then next line
+        const sameLine = lines[i].match(/₹?\s?(\d{3,6})/);
+        const nextLine = lines[i + 1]?.match(/₹?\s?(\d{3,6})/);
+        const val = sameLine || nextLine;
+        if (val) { amount = parseInt(val[1]); break; }
+      }
+    }
+
+    // Strategy 2: pick the largest number (>=100) that is NOT a phone number (10 digits)
+    if (!amount) {
+      const allNumbers = [...parsedText.matchAll(/₹?\s?(\d+)/g)]
+        .map(m => parseInt(m[1]))
+        .filter(n => n >= 100 && String(n).length <= 6);
+      amount = allNumbers.length ? Math.max(...allNumbers) : 0;
+    }
 
     const finalAmount = amount || 500; // fallback for demo
 
