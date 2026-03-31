@@ -1,8 +1,9 @@
 require('dotenv').config();
-const app       = require('./app');
+
+const app = require('./app');
 const connectDB = require('./config/db');
 const { startRiskMonitor } = require('./cron/riskMonitor');
-const logger    = require('./utils/logger');
+const logger = require('./utils/logger');
 
 const PORT = process.env.PORT || 5000;
 
@@ -10,16 +11,21 @@ const PORT = process.env.PORT || 5000;
 process.on('unhandledRejection', (err) => {
   logger.error(`Unhandled Rejection: ${err.message}`);
 });
+
 process.on('uncaughtException', (err) => {
   logger.error(`Uncaught Exception: ${err.message}`);
 });
 
-connectDB().then(() => {
-  app.listen(PORT, () => {
-    logger.info(`Server running on port ${PORT}`);
-    startRiskMonitor();
+connectDB()
+  .then(() => {
+    app.listen(PORT, "0.0.0.0", () => {
+      logger.info(`Server running on port ${PORT}`);
+      
+      // Start background monitoring job
+      startRiskMonitor();
+    });
+  })
+  .catch((err) => {
+    logger.error(`Failed to connect to DB: ${err.message}`);
+    process.exit(1);
   });
-}).catch((err) => {
-  logger.error(`Failed to connect to DB: ${err.message}`);
-  process.exit(1);
-});
