@@ -33,18 +33,21 @@ const extractIncome = async (req, res) => {
 
     const phonePattern = /\+?\d[\d\s]{8,}/;
     const parseAmount = (str) => {
-      const cleaned = str.replace(/,/g, '');
-      // 3-digit amounts read correctly, 4+ digit amounts have extra prefix digit from ₹ misread
-      if (cleaned.length > 3) return parseInt(cleaned.slice(1));
+      const cleaned = str.replace(/,/g, '').trim();
+      // 3-digit: take as-is. 4+ digit: OCR adds extra prefix digit due to ₹ misread, strip it
+      if (cleaned.length === 3) return parseInt(cleaned);
+      if (cleaned.length >= 4) return parseInt(cleaned.slice(1));
       return parseInt(cleaned);
     };
     const amountPattern = /₹\s?([\d,]+)/;
 
-    // Strategy 1: find line with only digits/commas (the amount line on UPI/GPay receipts)
+    // Strategy 1: find line that is mostly a number (UPI/GPay amount line)
     for (const line of lines) {
       if (phonePattern.test(line)) continue;
-      const val = line.match(/^[^a-zA-Z]*?([\d,]{3,7})\s*$/);
-      if (val) { amount = parseAmount(val[1]); break; }
+      const val = line.match(/([\d,]{3,8})/);
+      if (val && line.replace(/[\d,\s.]/g, '').length <= 2) {
+        amount = parseAmount(val[1]); break;
+      }
     }
 
     // Strategy 2: find number above keywords like completed/paid/earnings
