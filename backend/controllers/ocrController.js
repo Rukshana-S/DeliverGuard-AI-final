@@ -33,14 +33,14 @@ const extractIncome = async (req, res) => {
     const lines = parsedText.split(/\n/);
     let amount = 0;
 
-    // Strategy 1: find line with earnings keywords and grab number from next line or same line
+    // Strategy 1: find line with earnings keywords and grab number from same line or PREVIOUS line
     const earningsKeywords = /total|earning|earned|amount|payment|paid|completed|weekly|income/i;
     for (let i = 0; i < lines.length; i++) {
       if (earningsKeywords.test(lines[i])) {
-        // check same line first, then next line
+        // check same line first, then previous line
         const sameLine = lines[i].match(/₹?\s?(\d{3,6})/);
-        const nextLine = lines[i + 1]?.match(/₹?\s?(\d{3,6})/);
-        const val = sameLine || nextLine;
+        const prevLine = lines[i - 1]?.match(/₹?\s?(\d{3,6})/);
+        const val = sameLine || prevLine;
         if (val) { amount = parseInt(val[1]); break; }
       }
     }
