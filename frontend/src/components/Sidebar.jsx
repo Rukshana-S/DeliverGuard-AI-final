@@ -6,7 +6,7 @@ import {
   Radio, Wallet, BarChart2, UserCircle,
   Settings, HardHat, ClipboardList, FileText,
   Banknote, Zap, TrendingUp, FolderOpen,
-  TrafficCone, ShieldAlert,
+  TrafficCone, ShieldAlert, Trophy,
 } from 'lucide-react';
 
 const WORKER_LINKS = [
@@ -17,6 +17,7 @@ const WORKER_LINKS = [
   { to: '/monitoring',                label: 'Live Monitoring',  Icon: Radio },
   { to: '/claims',                    label: 'Claims & Payouts', Icon: Wallet },
   { to: '/analytics',                 label: 'Risk Analytics',   Icon: BarChart2 },
+  { to: '/leaderboard',               label: 'Leaderboard',      Icon: Trophy },
   { to: '/profile',                   label: 'Profile',          Icon: UserCircle },
 ];
 

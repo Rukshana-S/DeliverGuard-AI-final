@@ -5,16 +5,17 @@ import ClaimStepper from './ClaimStepper';
 import { getClaimById } from '../../services/claimService';
 import api from '../../services/api';
 import { formatCurrency } from '../../utils/helpers';
+import { Banknote } from 'lucide-react';
 
 export default function ClaimApproval() {
-  const navigate    = useNavigate();
-  const { state }   = useLocation();
-  const claimId     = state?.claimId;
+  const navigate  = useNavigate();
+  const { state } = useLocation();
+  const claimId   = state?.claimId;
 
-  const [claim,      setClaim]      = useState(null);
-  const [loading,    setLoading]    = useState(true);
-  const [paying,     setPaying]     = useState(false);
-  const [error,      setError]      = useState('');
+  const [claim,   setClaim]   = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [paying,  setPaying]  = useState(false);
+  const [error,   setError]   = useState('');
 
   useEffect(() => {
     if (!claimId) { setLoading(false); return; }
@@ -24,6 +25,7 @@ export default function ClaimApproval() {
       .finally(() => setLoading(false));
   }, [claimId]);
 
+  // Auto-initiate payout — no password needed for claims
   const handlePayout = async () => {
     setPaying(true);
     setError('');
@@ -48,42 +50,40 @@ export default function ClaimApproval() {
       <ClaimStepper />
 
       {/* Approved amount */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
         className="card text-center py-8 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-100 dark:border-blue-800"
       >
-        <p className="text-sm text-gray-500 mb-1">Approved Amount</p>
+        <p className="text-sm text-gray-500 mb-1">Approved Claim Amount</p>
         <p className="text-5xl font-bold text-blue-700 dark:text-blue-300">
           {claim ? formatCurrency(claim.claimAmount) : '—'}
         </p>
-        <p className="text-xs text-gray-400 mt-2">Claim ID: …{claimId?.slice(-8)}</p>
+        {claim?.hourlyIncome && (
+          <p className="text-xs text-gray-400 mt-2">
+            Hourly Income: {formatCurrency(claim.hourlyIncome)} × 6 hrs
+          </p>
+        )}
+        <p className="text-xs text-gray-400 mt-1">Claim ID: …{claimId?.slice(-8)}</p>
         <p className="text-xs text-gray-400 capitalize mt-1">
           {claim?.disruptionType?.replace(/_/g, ' ')} · {claim?.location?.city}
         </p>
       </motion.div>
 
-      {/* Progress bar */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="card"
-      >
+      {/* Transfer progress */}
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="card">
         <div className="flex justify-between text-xs text-gray-500 mb-2">
           <span>DeliverGuard Escrow</span>
-          <span>Your Account</span>
+          <span>Your Bank Account</span>
         </div>
         <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-3">
           <motion.div
             initial={{ width: '0%' }}
-            animate={{ width: paying ? '80%' : '40%' }}
+            animate={{ width: paying ? '90%' : '50%' }}
             transition={{ duration: 1.2, ease: 'easeOut' }}
             className="bg-gradient-to-r from-blue-500 to-indigo-500 h-3 rounded-full"
           />
         </div>
         <p className="text-xs text-blue-500 mt-2 text-center">
-          {paying ? 'Processing transfer…' : 'Transfer ready — awaiting confirmation'}
+          {paying ? 'Processing transfer…' : 'Transfer ready — click below to receive payout'}
         </p>
       </motion.div>
 
@@ -94,19 +94,19 @@ export default function ClaimApproval() {
       )}
 
       <motion.button
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
         onClick={handlePayout}
         disabled={paying || !claim || claim.status === 'paid'}
-        className="btn-primary w-full py-3 text-base disabled:opacity-50 disabled:cursor-not-allowed"
+        className="btn-primary w-full py-3 text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {paying ? (
-          <span className="flex items-center justify-center gap-2">
+          <>
             <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
             Processing…
-          </span>
-        ) : 'Transfer to Bank Now'}
+          </>
+        ) : (
+          <><Banknote size={18} /> Transfer to Bank Now</>
+        )}
       </motion.button>
     </div>
   );

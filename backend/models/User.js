@@ -19,6 +19,9 @@ const userSchema = new mongoose.Schema({
   },
   onboardingComplete: { type: Boolean, default: false },
   role: { type: String, enum: ['worker', 'admin'], default: 'worker' },
+  loyaltyPoints: { type: Number, default: 0 },
+  riskScore:     { type: Number, default: 0 },
+  fraudEvents:   { type: Number, default: 0 },
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {

@@ -2,9 +2,21 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { motion } from 'framer-motion';
-import { UserCircle, Bike, Landmark, Lock } from 'lucide-react';
+import { UserCircle, Bike, Landmark, Lock, Trophy, Star } from 'lucide-react';
 
 const PLATFORMS = ['Zomato', 'Swiggy', 'Uber Eats', 'Zepto', 'Blinkit', 'Other'];
+
+const getTier = (pts) => pts >= 500 ? 'Diamond' : pts >= 200 ? 'Gold' : 'Silver';
+const getNextTier = (pts) => {
+  if (pts < 200) return { name: 'Gold',    target: 200, color: 'bg-amber-500' };
+  if (pts < 500) return { name: 'Diamond', target: 500, color: 'bg-cyan-500' };
+  return { name: 'Diamond', target: 500, color: 'bg-cyan-500' };
+};
+const TIER_COLORS = {
+  Diamond: 'text-cyan-500 bg-cyan-50 dark:bg-cyan-900/30',
+  Gold:    'text-amber-500 bg-amber-50 dark:bg-amber-900/30',
+  Silver:  'text-gray-500 bg-gray-100 dark:bg-gray-800',
+};
 
 export default function Profile() {
   const { user, updateUser } = useAuth();
@@ -85,18 +97,49 @@ export default function Profile() {
     { key: 'security', label: 'Security',      Icon: Lock },
   ];
 
+  const pts      = user?.loyaltyPoints || 0;
+  const tier     = getTier(pts);
+  const nextTier = getNextTier(pts);
+  const progress = Math.min((pts / nextTier.target) * 100, 100);
+
   return (
     <div className="max-w-2xl space-y-6">
-      {/* Avatar + name */}
+      {/* Avatar + name + tier */}
       <div className="card flex items-center gap-4">
         <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-2xl font-bold text-blue-600">
           {user?.name?.[0]?.toUpperCase()}
         </div>
-        <div>
+        <div className="flex-1">
           <p className="font-bold text-lg text-gray-800 dark:text-gray-100">{user?.name}</p>
           <p className="text-sm text-gray-500">{user?.email} · {user?.deliveryPlatform}</p>
-          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full capitalize">{user?.role}</span>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full capitalize">{user?.role}</span>
+            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${TIER_COLORS[tier]}`}>{tier}</span>
+          </div>
         </div>
+        <div className="text-right">
+          <p className="text-xs text-gray-400">Rank</p>
+          <p className="text-2xl font-extrabold text-blue-600 flex items-center gap-1"><Trophy size={16} />#{user?.rank || '—'}</p>
+        </div>
+      </div>
+
+      {/* Loyalty Points Progress */}
+      <div className="card space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-1.5"><Star size={14} className="text-amber-400" /> Loyalty Points</p>
+          <span className="text-lg font-extrabold text-amber-500">{pts} pts</span>
+        </div>
+        <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2.5">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 1, ease: 'easeOut' }}
+            className={`h-2.5 rounded-full ${nextTier.color}`}
+          />
+        </div>
+        <p className="text-xs text-gray-400">
+          {pts >= 500 ? 'Maximum tier reached! 🎉' : `${nextTier.target - pts} pts to ${nextTier.name}`}
+        </p>
       </div>
 
       {/* Tabs */}

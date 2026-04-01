@@ -38,6 +38,9 @@ const getMe = async (req, res) => {
     deliveryZones: u.deliveryZones,
     bankAccount: u.bankAccount,
     onboardingComplete: u.onboardingComplete,
+    loyaltyPoints: u.loyaltyPoints || 0,
+    riskScore: u.riskScore || 0,
+    fraudEvents: u.fraudEvents || 0,
   });
 };
 

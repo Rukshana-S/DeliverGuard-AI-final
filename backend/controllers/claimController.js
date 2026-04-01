@@ -36,9 +36,11 @@ const createClaim = async (req, res, next) => {
         code: 'COVERAGE_INACTIVE',
       });
 
-    const severityFactor = getSeverityFactor(disruptionType, disruptionValue);
-    const incomeLoss = calcIncomeLoss(req.user.avgDailyIncome, req.user.workingHours, severityFactor);
-    const claimAmount = Math.min(incomeLoss, policy.maxWeeklyPayout || policy.coverageAmount || incomeLoss);
+    const weeklyIncome = latestPayment.weeklyIncome || req.user.avgDailyIncome * 7;
+    const workingHours = req.user.workingHours || 7;
+    const hourlyIncome = weeklyIncome / workingHours;
+    const claimAmount  = Math.round(6 * hourlyIncome);
+    const incomeLoss   = claimAmount;
 
     const claim = await Claim.create({
       userId: req.user._id,
@@ -54,7 +56,7 @@ const createClaim = async (req, res, next) => {
     claim.status = isSuspicious ? 'investigating' : 'approved';
     await claim.save();
 
-    res.status(201).json(claim);
+    res.status(201).json({ ...claim.toObject(), hourlyIncome: Math.round(hourlyIncome) });
   } catch (err) { next(err); }
 };
 

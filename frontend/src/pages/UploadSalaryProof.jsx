@@ -7,7 +7,7 @@ import api from '../services/api';
 
 const PLAN_RATES  = { basic: 5, standard: 8, premium: 10 };
 const PLAN_LABELS = { basic: 'Basic', standard: 'Standard', premium: 'Premium' };
-const STEPS       = ['upload', 'scanning', 'confirm', 'success'];
+const STEPS       = ['upload', 'scanning', 'confirm', 'payment', 'success'];
 
 const fmt     = (n) => `₹${Number(n).toLocaleString('en-IN')}`;
 const fmtDate = (d) => new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -25,6 +25,8 @@ export default function UploadSalaryProof() {
   const [error,         setError]         = useState('');
   const [paying,        setPaying]        = useState(false);
   const [paymentRecord, setPaymentRecord] = useState(null);
+  const [password,      setPassword]      = useState('');
+  const [verifying,     setVerifying]     = useState(false);
 
   const planKey = policy?.planType?.toLowerCase();
   const rate    = PLAN_RATES[planKey] ?? 0;
@@ -79,8 +81,23 @@ export default function UploadSalaryProof() {
       setError('No active insurance plan found. Please select a plan first.');
       return;
     }
-    setPaying(true);
+    // Go to password verification step first
+    setStep('payment');
     setError('');
+  };
+
+  const handleVerifyAndPay = async () => {
+    if (!password) { setError('Please enter your password.'); return; }
+    setVerifying(true);
+    setError('');
+    try {
+      await api.post('/payments/verify-password', { password });
+    } catch {
+      setError('Incorrect password. Please try again.');
+      setVerifying(false);
+      return;
+    }
+    setPaying(true);
     try {
       const { data } = await payWeeklyPremium({
         weeklyIncome: Number(weeklyIncome),
@@ -92,6 +109,7 @@ export default function UploadSalaryProof() {
       setError(err.response?.data?.message || 'Payment failed. Please try again.');
     } finally {
       setPaying(false);
+      setVerifying(false);
     }
   };
 
@@ -112,6 +130,7 @@ export default function UploadSalaryProof() {
           { key: 'upload',   label: 'Upload',  icon: '📤' },
           { key: 'scanning', label: 'Reading', icon: '🤖' },
           { key: 'confirm',  label: 'Premium', icon: '🧮' },
+          { key: 'payment',  label: 'Pay',     icon: '🔐' },
           { key: 'success',  label: 'Done',    icon: '✅' },
         ].map(({ key, label, icon }, i, arr) => {
           const idx     = STEPS.indexOf(step);
@@ -320,7 +339,57 @@ export default function UploadSalaryProof() {
           </motion.div>
         )}
 
-        {/* ── STEP 4: Success ── */}
+        {/* ── STEP 4: GPay-like Password Verification ── */}
+        {step === 'payment' && (
+          <motion.div key="payment"
+            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
+            className="space-y-4">
+            <div className="card text-center space-y-4 py-6">
+              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center mx-auto text-3xl">
+                🔐
+              </div>
+              <div>
+                <p className="font-bold text-gray-800 dark:text-gray-100 text-lg">Confirm Payment</p>
+                <p className="text-sm text-gray-500 mt-1">Enter your DeliverGuard password to authorize</p>
+              </div>
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-4 text-left space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Amount</span>
+                  <span className="font-extrabold text-blue-600 text-lg">{fmt(premium)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Plan</span>
+                  <span className="font-medium text-gray-800 dark:text-gray-100">{PLAN_LABELS[planKey]}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Coverage</span>
+                  <span className="font-medium text-gray-800 dark:text-gray-100">7 Days</span>
+                </div>
+              </div>
+              <input
+                type="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                className="input text-center text-lg tracking-widest"
+                autoFocus
+              />
+              {error && <p className="text-sm text-red-500">{error}</p>}
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => { setStep('confirm'); setError(''); setPassword(''); }}
+                className="flex-1 py-3 rounded-2xl font-semibold border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                Back
+              </button>
+              <button onClick={handleVerifyAndPay} disabled={verifying || paying || !password}
+                className="flex-1 py-3 rounded-2xl font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 dark:disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors">
+                {verifying || paying ? 'Processing…' : `Pay ${fmt(premium)}`}
+              </button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* ── STEP 5: Success ── */}}
         {step === 'success' && paymentRecord && (
           <motion.div key="success"
             initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}

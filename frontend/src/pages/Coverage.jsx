@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePolicy } from '../context/PolicyContext';
+import { useNavigate } from 'react-router-dom';
 import {
   CloudRain, Waves, Users, Building2, Wind,
   ClipboardList, ShieldCheck, Scale, Calculator,
@@ -87,6 +88,7 @@ function Box({ children, className = '' }) {
 /* ─── Full-screen Policy Page ────────────────────────────── */
 function PolicyPage({ planKey, onClose }) {
   const { selectPlan, setPolicy } = usePolicy();
+  const navigate = useNavigate();
   const plan = PLANS[planKey];
   const a    = A[plan.accent];
   const e    = calcEx(plan.premiumPct);
@@ -270,7 +272,7 @@ function PolicyPage({ planKey, onClose }) {
                   className="mt-0.5 w-4 h-4 accent-blue-600 shrink-0 cursor-pointer" />
                 <span className="text-sm text-gray-700 dark:text-gray-300">
                   I agree to the{' '}
-                  <span className="text-blue-600 dark:text-blue-400 underline cursor-pointer">
+                  <span onClick={() => navigate('/terms')} className="text-blue-600 dark:text-blue-400 underline cursor-pointer">
                     DeliverGuard AI Insurance Terms & Conditions
                   </span>
                 </span>

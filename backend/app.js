@@ -13,6 +13,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const payoutRoutes = require('./routes/payoutRoutes');
 const premiumRoutes = require('./routes/premiumRoutes');
 const ocrRoutes = require('./routes/ocrRoutes');
+const leaderboardRoutes = require('./routes/leaderboardRoutes');
 
 const app = express();
 
@@ -56,6 +57,7 @@ app.use('/api/payout', payoutRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/payments', premiumRoutes);
 app.use('/api/ocr', ocrRoutes);
+app.use('/api/leaderboard', leaderboardRoutes);
 
 // Error handler
 app.use(errorHandler);

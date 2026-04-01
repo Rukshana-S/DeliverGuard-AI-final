@@ -36,6 +36,8 @@ import ClaimSuccess from './pages/claim/ClaimSuccess';
 import UploadSalaryProof from './pages/UploadSalaryProof';
 import InsurancePaymentHistory from './pages/InsurancePaymentHistory';
 import LandingPage from './pages/LandingPage';
+import Leaderboard from './pages/Leaderboard';
+import Terms from './pages/Terms';
 
 const AUTH_PATHS = ['/login', '/register', '/onboarding', '/setup/', '/'];
 
@@ -132,6 +134,8 @@ function AppRoutes() {
         <Route path="/profile"         element={<ProtectedLayout title="Profile"><Profile /></ProtectedLayout>} />
         <Route path="/upload-salary-proof"       element={<ProtectedLayout title="Upload Salary Proof"><UploadSalaryProof /></ProtectedLayout>} />
         <Route path="/insurance-payment-history" element={<ProtectedLayout title="Payment History"><InsurancePaymentHistory /></ProtectedLayout>} />
+        <Route path="/leaderboard"               element={<ProtectedLayout title="Leaderboard"><Leaderboard /></ProtectedLayout>} />
+        <Route path="/terms"                     element={<ProtectedLayout title="Terms & Conditions"><Terms /></ProtectedLayout>} />
 
         {/* Admin */}
         <Route path="/admin"               element={<AdminRoute title="Admin Dashboard"><AdminDashboard /></AdminRoute>} />

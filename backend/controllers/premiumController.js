@@ -1,5 +1,6 @@
 const InsurancePayment = require('../models/InsurancePayment');
 const Policy = require('../models/Policy');
+const User = require('../models/User');
 
 const PLAN_RATES = { basic: 5, standard: 8, premium: 10 };
 
@@ -72,4 +73,15 @@ const getCoverageStatus = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-module.exports = { payWeeklyPremium, getPaymentHistory, getCoverageStatus };
+// POST /api/payments/verify-password
+const verifyPassword = async (req, res, next) => {
+  try {
+    const { password } = req.body;
+    const user = await User.findById(req.user._id).select('+password');
+    const valid = await user.comparePassword(password);
+    if (!valid) return res.status(401).json({ message: 'Incorrect password' });
+    res.json({ success: true });
+  } catch (err) { next(err); }
+};
+
+module.exports = { payWeeklyPremium, getPaymentHistory, getCoverageStatus, verifyPassword };
