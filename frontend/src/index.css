@@ -4,6 +4,8 @@
 
 @layer base {
   body { @apply bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100; }
+  * { @apply box-border; }
+  html, body { overflow-x: hidden; }
 }
 
 @layer components {
