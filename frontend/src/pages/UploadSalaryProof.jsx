@@ -1,9 +1,10 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePolicy } from '../context/PolicyContext';
-import { payWeeklyPremium } from '../services/premiumService';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
+import PaymentModal from './PaymentModal';
 
 const PLAN_RATES  = { basic: 5, standard: 8, premium: 10 };
 const PLAN_LABELS = { basic: 'Basic', standard: 'Standard', premium: 'Premium' };
@@ -14,6 +15,7 @@ const fmtDate = (d) => new Date(d).toLocaleDateString('en-IN', { day: 'numeric',
 
 export default function UploadSalaryProof() {
   const { policy } = usePolicy();
+  const { user }   = useAuth();
   const navigate   = useNavigate();
   const fileRef    = useRef();
 
@@ -23,10 +25,8 @@ export default function UploadSalaryProof() {
   const [weeklyIncome,  setWeeklyIncome]  = useState('');
   const [manualMode,    setManualMode]    = useState(false);
   const [error,         setError]         = useState('');
-  const [paying,        setPaying]        = useState(false);
   const [paymentRecord, setPaymentRecord] = useState(null);
-  const [password,      setPassword]      = useState('');
-  const [verifying,     setVerifying]     = useState(false);
+  const [showModal,     setShowModal]     = useState(false);
 
   const planKey = policy?.planType?.toLowerCase();
   const rate    = PLAN_RATES[planKey] ?? 0;
@@ -72,45 +72,17 @@ export default function UploadSalaryProof() {
     }
   };
 
-  const handlePay = async () => {
-    if (!weeklyIncome || Number(weeklyIncome) <= 0) {
-      setError('Please enter a valid weekly income.');
-      return;
-    }
-    if (!policy) {
-      setError('No active insurance plan found. Please select a plan first.');
-      return;
-    }
-    // Go to password verification step first
-    setStep('payment');
+  const handlePay = () => {
+    if (!weeklyIncome || Number(weeklyIncome) <= 0) { setError('Please enter a valid weekly income.'); return; }
+    if (!policy) { setError('No active insurance plan found. Please select a plan first.'); return; }
     setError('');
+    setStep('payment');
   };
 
-  const handleVerifyAndPay = async () => {
-    if (!password) { setError('Please enter your password.'); return; }
-    setVerifying(true);
-    setError('');
-    try {
-      await api.post('/payments/verify-password', { password });
-    } catch {
-      setError('Incorrect password. Please try again.');
-      setVerifying(false);
-      return;
-    }
-    setPaying(true);
-    try {
-      const { data } = await payWeeklyPremium({
-        weeklyIncome: Number(weeklyIncome),
-        ocrImageUrl:  preview || '',
-      });
-      setPaymentRecord(data);
-      setStep('success');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Payment failed. Please try again.');
-    } finally {
-      setPaying(false);
-      setVerifying(false);
-    }
+  const handlePaymentSuccess = (data) => {
+    setShowModal(false);
+    setPaymentRecord(data);
+    setStep('success');
   };
 
   return (
@@ -339,57 +311,101 @@ export default function UploadSalaryProof() {
           </motion.div>
         )}
 
-        {/* ── STEP 4: GPay-like Password Verification ── */}
+        {/* ── STEP 4: GPay-style Payment Page ── */}
         {step === 'payment' && (
           <motion.div key="payment"
-            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
-            className="space-y-4">
-            <div className="card text-center space-y-4 py-6">
-              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center mx-auto text-3xl">
-                🔐
-              </div>
-              <div>
-                <p className="font-bold text-gray-800 dark:text-gray-100 text-lg">Confirm Payment</p>
-                <p className="text-sm text-gray-500 mt-1">Enter your DeliverGuard password to authorize</p>
-              </div>
-              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-4 text-left space-y-1">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Amount</span>
-                  <span className="font-extrabold text-blue-600 text-lg">{fmt(premium)}</span>
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 flex flex-col items-center justify-center px-6"
+            style={{ background: 'linear-gradient(160deg, #0f1420 0%, #1a1f2e 50%, #0d1117 100%)' }}
+          >
+            {/* Back button */}
+            <button
+              onClick={() => setStep('confirm')}
+              className="absolute top-6 left-6 text-gray-400 hover:text-white transition-colors text-sm flex items-center gap-1"
+            >
+              ← Back
+            </button>
+
+            <div className="w-full max-w-sm space-y-6">
+              {/* Avatar + title */}
+              <div className="text-center space-y-3">
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: 'spring', stiffness: 200 }}
+                  className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-2xl font-bold text-white mx-auto shadow-lg shadow-blue-500/30"
+                >
+                  {user?.name?.[0]?.toUpperCase() || 'U'}
+                </motion.div>
+                <div>
+                  <p className="text-white font-bold text-lg">Paying Weekly Premium</p>
+                  <p className="text-gray-400 text-sm">Insurance Premium Payment</p>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Plan</span>
-                  <span className="font-medium text-gray-800 dark:text-gray-100">{PLAN_LABELS[planKey]}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Coverage</span>
-                  <span className="font-medium text-gray-800 dark:text-gray-100">7 Days</span>
-                </div>
               </div>
-              <input
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => { setPassword(e.target.value); setError(''); }}
-                className="input text-center text-lg tracking-widest"
-                autoFocus
-              />
-              {error && <p className="text-sm text-red-500">{error}</p>}
+
+              {/* Amount */}
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.1 }}
+                className="text-center"
+              >
+                <p className="text-5xl font-extrabold text-white tracking-tight">{fmt(premium)}</p>
+                <p className="text-gray-500 text-xs mt-2">Income Loss Compensation</p>
+              </motion.div>
+
+              {/* Bank card */}
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="rounded-2xl p-4 flex items-center gap-4"
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
+              >
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white font-bold text-xs shrink-0">
+                  {user?.bankAccount?.bankName?.slice(0, 3)?.toUpperCase() || 'SBI'}
+                </div>
+                <div className="flex-1">
+                  <p className="text-white text-sm font-semibold">
+                    {user?.bankAccount?.bankName || 'Bank Account'}
+                  </p>
+                  <p className="text-gray-400 text-xs">
+                    ****{user?.bankAccount?.accountNumber?.slice(-4) || '0000'} · IMPS
+                  </p>
+                </div>
+                <div className="w-2 h-2 rounded-full bg-green-400" />
+              </motion.div>
+
+              {/* Proceed button */}
+              <motion.button
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setShowModal(true)}
+                className="w-full py-4 rounded-2xl font-bold text-white text-base shadow-lg transition-all"
+                style={{ background: 'linear-gradient(135deg, #2563eb, #4f46e5)', boxShadow: '0 8px 32px rgba(79,70,229,0.4)' }}
+              >
+                Proceed to Pay →
+              </motion.button>
+
+              <p className="text-center text-xs text-gray-600">🔒 256-bit encrypted · Secured by DeliverGuard AI</p>
             </div>
-            <div className="flex gap-3">
-              <button onClick={() => { setStep('confirm'); setError(''); setPassword(''); }}
-                className="flex-1 py-3 rounded-2xl font-semibold border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                Back
-              </button>
-              <button onClick={handleVerifyAndPay} disabled={verifying || paying || !password}
-                className="flex-1 py-3 rounded-2xl font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 dark:disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors">
-                {verifying || paying ? 'Processing…' : `Pay ${fmt(premium)}`}
-              </button>
-            </div>
+
+            {/* Password Modal */}
+            <PaymentModal
+              show={showModal}
+              onClose={() => setShowModal(false)}
+              premium={premium}
+              weeklyIncome={weeklyIncome}
+              preview={preview}
+              onSuccess={handlePaymentSuccess}
+            />
           </motion.div>
         )}
 
-        {/* ── STEP 5: Success ── */}}
+        {/* ── STEP 5: Success ── */}
         {step === 'success' && paymentRecord && (
           <motion.div key="success"
             initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
