@@ -52,31 +52,87 @@ const TRUST = [
 ];
 
 const FAQS = [
-  { q: 'How does the AI detect disruptions?',         a: 'We integrate with OpenWeather, WAQI (AQI), and TomTom Traffic APIs. When thresholds are crossed — e.g. rain > 50 mm/hr or AQI > 300 — a disruption event is automatically triggered.' },
-  { q: 'How quickly are payouts processed?',          a: 'Approved claims are processed within 24 hours directly to your registered bank account via Razorpay.' },
-  { q: 'Can I change my plan after subscribing?',     a: 'Yes. You can upgrade or downgrade your plan at the start of any new weekly cycle from your Coverage page.' },
-  { q: 'What documents do I need to register?',       a: 'A valid ID, your delivery platform username, and a recent income/salary proof (screenshot or PDF).' },
-  { q: 'Is my data safe with DeliverGuard AI?',       a: 'All personal and financial data is encrypted at rest and in transit. We never share your data with third parties.' },
+  {
+    q: 'What does the insurance cover?',
+    a: 'The insurance covers income loss due to disruptions like heavy rain, traffic, or poor air quality. When these conditions exceed set limits, payouts are triggered automatically. It helps gig workers stay financially secure. No manual claim is required.',
+  },
+  {
+    q: 'When will I receive my payout?',
+    a: 'Payouts are processed instantly once a disruption is detected and verified. The system automatically credits the amount to your account. In most cases, it takes only a few minutes. No manual steps are involved.',
+  },
+  {
+    q: 'How much does it cost?',
+    a: 'The cost depends on the plan you choose. We offer affordable micro-premium options for daily or weekly coverage. Plans are designed to be budget-friendly for gig workers. You can upgrade anytime.',
+  },
+  {
+    q: 'Do I need to submit any documents?',
+    a: 'No documents are required for claims. The system uses real-time data to detect disruptions. Everything is verified automatically. This makes the process fast and hassle-free.',
+  },
+  {
+    q: 'Can I change or cancel my plan?',
+    a: 'Yes, you can change or cancel your plan anytime. Updates can be done directly from your dashboard. Changes will reflect in the next billing cycle. It gives full flexibility to users.',
+  },
+  {
+    q: 'What if I choose not to work on a bad day?',
+    a: 'You are still eligible for payouts if a disruption occurs. It does not depend on whether you worked or not. The system checks environmental conditions only. This ensures fair coverage.',
+  },
+  {
+    q: 'Is my personal data safe?',
+    a: 'Yes, your data is fully secure and encrypted. We follow strict security standards. Your information is never shared without consent. Privacy is a top priority.',
+  },
+  {
+    q: 'Do I need to file a claim manually?',
+    a: 'No manual claim is needed. The system automatically detects disruptions. Once verified, payouts are triggered instantly. This removes delays and effort for users.',
+  },
 ];
 
 /* ─── Sub-components ────────────────────────────────────── */
 
-function FAQItem({ q, a }) {
-  const [open, setOpen] = useState(false);
+function FAQItem({ q, a, isOpen, onToggle }) {
   return (
-    <div className="border border-gray-200 rounded-xl overflow-hidden">
+    <div className={`border rounded-xl overflow-hidden transition-colors duration-200 ${
+      isOpen ? 'border-indigo-200 bg-white shadow-sm' : 'border-gray-200 bg-white'
+    }`}>
       <button
-        onClick={() => setOpen(!open)}
+        onClick={onToggle}
         className="w-full flex items-center justify-between px-5 py-4 text-left font-medium text-gray-800 hover:bg-gray-50 transition-colors"
       >
-        <span>{q}</span>
-        <ChevronDown size={18} className={`text-gray-400 transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
+        <span className={`text-sm font-semibold ${isOpen ? 'text-indigo-700' : 'text-gray-800'}`}>{q}</span>
+        <ChevronDown
+          size={18}
+          className={`shrink-0 ml-3 transition-transform duration-300 ${
+            isOpen ? 'rotate-180 text-indigo-500' : 'text-gray-400'
+          }`}
+        />
       </button>
-      {open && (
-        <div className="px-5 pb-4 text-sm text-gray-600 leading-relaxed border-t border-gray-100 pt-3">
+      <div
+        style={{
+          maxHeight: isOpen ? '200px' : '0px',
+          overflow: 'hidden',
+          transition: 'max-height 0.35s ease',
+        }}
+      >
+        <p className="px-5 pb-5 pt-1 text-sm text-gray-600 leading-relaxed border-t border-gray-100">
           {a}
-        </div>
-      )}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function FAQList() {
+  const [openIdx, setOpenIdx] = useState(0);
+  return (
+    <div className="space-y-3">
+      {FAQS.map((faq, i) => (
+        <FAQItem
+          key={faq.q}
+          q={faq.q}
+          a={faq.a}
+          isOpen={openIdx === i}
+          onToggle={() => setOpenIdx(openIdx === i ? -1 : i)}
+        />
+      ))}
     </div>
   );
 }
@@ -520,10 +576,9 @@ export default function LandingPage() {
           <div className="text-center mb-10">
             <SectionLabel>FAQ</SectionLabel>
             <h2 className="text-3xl font-bold">Frequently Asked Questions</h2>
+            <p className="text-gray-500 text-sm mt-2">Everything you need to know about DeliverGuard AI.</p>
           </div>
-          <div className="space-y-3">
-            {FAQS.map((faq) => <FAQItem key={faq.q} {...faq} />)}
-          </div>
+          <FAQList />
         </div>
       </section>
 
