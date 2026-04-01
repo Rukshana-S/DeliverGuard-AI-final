@@ -25,7 +25,6 @@ export default function AdminPayouts() {
   const totals = {
     total:   payouts.reduce((s, p) => s + p.amount, 0),
     success: payouts.filter((p) => p.paymentStatus === 'success').reduce((s, p) => s + p.amount, 0),
-    pending: payouts.filter((p) => p.paymentStatus === 'pending').length,
     failed:  payouts.filter((p) => p.paymentStatus === 'failed').length,
   };
 
@@ -34,12 +33,11 @@ export default function AdminPayouts() {
   return (
     <div className="space-y-4">
       {/* Summary cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         {[
-          { label: 'Total Disbursed',  value: formatCurrency(totals.total),   color: 'text-blue-600' },
-          { label: 'Successful',       value: formatCurrency(totals.success),  color: 'text-green-600' },
-          { label: 'Pending',          value: totals.pending,                  color: 'text-yellow-600' },
-          { label: 'Failed',           value: totals.failed,                   color: 'text-red-600' },
+          { label: 'Total Disbursed', value: formatCurrency(totals.total),   color: 'text-blue-600' },
+          { label: 'Successful',      value: formatCurrency(totals.success),  color: 'text-green-600' },
+          { label: 'Failed',          value: totals.failed,                   color: 'text-red-600' },
         ].map((c) => (
           <div key={c.label} className="card text-center">
             <p className={`text-2xl font-bold ${c.color}`}>{c.value}</p>
@@ -51,7 +49,7 @@ export default function AdminPayouts() {
       {/* Filter + Table */}
       <div className="card overflow-x-auto">
         <div className="flex items-center gap-3 mb-4">
-          {['all', 'pending', 'processing', 'success', 'failed'].map((s) => (
+          {['all', 'success', 'failed'].map((s) => (
             <button key={s} onClick={() => setFilter(s)}
               className={`px-3 py-1 rounded-full text-xs font-medium capitalize transition-colors ${
                 filter === s ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
@@ -88,11 +86,13 @@ export default function AdminPayouts() {
                     <p className="text-xs text-gray-400">{p.userId?.city}</p>
                   </td>
                   <td className="py-3 pr-4">
-                    <p>{p.bankSnapshot?.bankName || p.userId?.bankAccount?.bankName || '—'}</p>
+                    <p>{p.bankSnapshot?.bankName || p.userId?.bankAccount?.bankName || 'N/A'}</p>
                     <p className="text-xs text-gray-400">
                       {p.bankSnapshot?.accountNumber
                         ? `****${p.bankSnapshot.accountNumber.slice(-4)}`
-                        : '—'}
+                        : p.userId?.bankAccount?.accountNumber
+                        ? `****${p.userId.bankAccount.accountNumber.slice(-4)}`
+                        : 'No account'}
                     </p>
                   </td>
                   <td className="py-3 pr-4 font-semibold text-green-600">{formatCurrency(p.amount)}</td>

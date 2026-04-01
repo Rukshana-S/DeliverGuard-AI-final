@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
-const PLATFORMS    = ['Zomato', 'Swiggy', 'Uber Eats', 'Zepto', 'Blinkit', 'Other'];
+const PLATFORMS    = ['Zomato'];
 const HOUR_OPTIONS = [
   { label: '4–6 hours', value: 5 },
   { label: '6–8 hours', value: 7 },

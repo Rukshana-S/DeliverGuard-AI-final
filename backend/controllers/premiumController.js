@@ -42,6 +42,9 @@ const payWeeklyPremium = async (req, res, next) => {
       ocrImageUrl: ocrImageUrl || '',
     });
 
+    // +50 loyalty points for every premium payment
+    await User.findByIdAndUpdate(req.user._id, { $inc: { loyaltyPoints: 50 } });
+
     res.status(201).json(payment);
   } catch (err) { next(err); }
 };

@@ -40,8 +40,12 @@ const getDashboard = async (req, res, next) => {
 /* GET /admin/policies */
 const getAllPolicies = async (req, res, next) => {
   try {
-    const policies = await Policy.find()
-      .populate('userId', 'name email city deliveryPlatform phone')
+    const filter = {};
+    if (req.query.premium && req.query.premium !== 'all') {
+      filter.premiumPct = Number(req.query.premium);
+    }
+    const policies = await Policy.find(filter)
+      .populate('userId', 'name email city deliveryPlatform phone isBlocked')
       .sort({ createdAt: -1 });
     res.json(policies);
   } catch (err) { next(err); }
@@ -141,11 +145,34 @@ const updateUser = async (req, res, next) => {
 /* GET /admin/payouts */
 const getAllPayouts = async (req, res, next) => {
   try {
-    const payouts = await Payout.find()
+    const filter = {};
+    if (req.query.status && req.query.status !== 'all') {
+      filter.paymentStatus = req.query.status;
+    } else {
+      // Only show success and failed by default
+      filter.paymentStatus = { $in: ['success', 'failed'] };
+    }
+    const payouts = await Payout.find(filter)
       .populate('userId', 'name city bankAccount')
       .populate('claimId', 'disruptionType location claimAmount')
       .sort({ timestamp: -1 });
     res.json(payouts);
+  } catch (err) { next(err); }
+};
+
+/* PUT /admin/block-user/:id */
+const blockUser = async (req, res, next) => {
+  try {
+    const user = await User.findByIdAndUpdate(req.params.id, { isBlocked: true }, { new: true }).select('-password');
+    res.json(user);
+  } catch (err) { next(err); }
+};
+
+/* PUT /admin/unblock-user/:id */
+const unblockUser = async (req, res, next) => {
+  try {
+    const user = await User.findByIdAndUpdate(req.params.id, { isBlocked: false }, { new: true }).select('-password');
+    res.json(user);
   } catch (err) { next(err); }
 };
 
@@ -234,4 +261,5 @@ module.exports = {
   getFraudAlerts, getAnalytics, getAllUsers, updateUser,
   getAllPayouts, getDisruptions, getSystemLogs, getTraffic,
   approveClaim, rejectClaim, initiatePayout,
+  blockUser, unblockUser,
 };

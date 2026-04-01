@@ -5,18 +5,19 @@ const STEPS = [
   { path: '/claim/detected',     label: 'Alert' },
   { path: '/claim/status',       label: 'Status' },
   { path: '/claim/verification', label: 'Verify' },
-  { path: '/claim/approval',     label: 'Approval' },
   { path: '/claim/success',      label: 'Paid' },
 ];
 
 export default function ClaimStepper() {
   const { pathname } = useLocation();
-  const current = STEPS.findIndex((s) => s.path === pathname);
+  // treat approval page as success step
+  const normalised = pathname === '/claim/approval' ? '/claim/success' : pathname;
+  const current = STEPS.findIndex((s) => s.path === normalised);
 
   return (
     <div className="flex items-center justify-center gap-0 mb-6">
       {STEPS.map((step, i) => {
-        const done = i < current;
+        const done   = i < current;
         const active = i === current;
         return (
           <div key={step.path} className="flex items-center">
@@ -25,9 +26,9 @@ export default function ClaimStepper() {
                 initial={{ scale: 0.8 }}
                 animate={{ scale: active ? 1.1 : 1 }}
                 className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${
-                  done    ? 'bg-blue-600 border-blue-600 text-white' :
-                  active  ? 'bg-white dark:bg-gray-900 border-blue-600 text-blue-600' :
-                            'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400'
+                  done   ? 'bg-blue-600 border-blue-600 text-white' :
+                  active ? 'bg-white dark:bg-gray-900 border-blue-600 text-blue-600' :
+                           'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400'
                 }`}
               >
                 {done ? '✓' : i + 1}

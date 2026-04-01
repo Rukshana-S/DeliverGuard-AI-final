@@ -1,5 +1,6 @@
 const Claim = require('../models/Claim');
 const FraudLog = require('../models/FraudLog');
+const User = require('../models/User');
 const logger = require('../utils/logger');
 
 const checkFraud = async (userId, claimData) => {
@@ -34,7 +35,11 @@ const checkFraud = async (userId, claimData) => {
       fraudType: flags[0],
       riskScore,
     });
-    logger.warn(`Fraud detected for user ${userId} — score: ${riskScore}`);
+    // -100 loyalty points for fraud/risk detection
+    await User.findByIdAndUpdate(userId, {
+      $inc: { loyaltyPoints: -100, fraudEvents: 1, riskScore: riskScore },
+    });
+    logger.warn(`Fraud detected for user ${userId} — score: ${riskScore}, -100 pts`);
   }
 
   return { riskScore, isSuspicious: riskScore > 50 };

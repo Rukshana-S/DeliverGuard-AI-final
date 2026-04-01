@@ -57,7 +57,7 @@ export default function Claims() {
           <div>
             <label className="text-xs text-gray-500 mb-1 block">Status</label>
             <select className="input" value={filter} onChange={(e) => setFilter(e.target.value)}>
-              {['all', 'pending', 'approved', 'paid', 'rejected', 'investigating'].map((s) => (
+              {['all', 'pending', 'approved', 'paid', 'rejected'].map((s) => (
                 <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
               ))}
             </select>

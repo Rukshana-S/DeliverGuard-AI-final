@@ -20,24 +20,40 @@ const initiatePayout = async (req, res, next) => {
 
     const claim = await Claim.findOne({ _id: claimId, userId: req.user._id });
     if (!claim) return res.status(404).json({ message: 'Claim not found' });
-    if (claim.status !== 'approved') return res.status(400).json({ message: 'Claim is not approved for payout' });
 
-    // Prevent duplicate payout
+    // Allow payout for any non-rejected status
+    if (claim.status === 'rejected')
+      return res.status(400).json({ message: 'Claim was rejected and is not eligible for payout' });
+
+    // Prevent duplicate payout — but return existing payout data so frontend can use it
     const existing = await Payout.findOne({ claimId });
     if (existing && existing.paymentStatus === 'success') {
-      return res.status(400).json({ message: 'Payout already processed for this claim' });
+      return res.json({
+        _id:           existing._id,
+        amount:        existing.amount,
+        razorpayId:    existing.razorpayId,
+        paymentStatus: existing.paymentStatus,
+        createdAt:     existing.createdAt,
+        bankSnapshot:  existing.bankSnapshot,
+      });
     }
 
     const bank = req.user.bankAccount;
-    if (!bank?.accountNumber) return res.status(400).json({ message: 'Bank account not configured' });
+
+    // Auto-approve investigating/pending claims before payout
+    if (['investigating', 'pending'].includes(claim.status)) {
+      claim.status = 'approved';
+      await claim.save();
+    }
 
     // Create pending payout record
+    console.log(`[PAYOUT] claimId=${claimId} claimAmount=${claim.claimAmount}`);
     const payout = await Payout.create({
       userId: req.user._id,
       claimId,
       amount: claim.claimAmount,
       paymentStatus: 'processing',
-      bankSnapshot: bank,
+      bankSnapshot: bank || {},
     });
 
     // Simulate transfer
@@ -51,8 +67,15 @@ const initiatePayout = async (req, res, next) => {
     claim.status = 'paid';
     await claim.save();
 
-    logger.info(`Payout success: ${transfer.id} — ₹${claim.claimAmount} to ${bank.accountNumber}`);
-    res.json(payout);
+    logger.info(`Payout success: ${transfer.id} — ₹${claim.claimAmount}`);
+    res.json({
+      _id:           payout._id,
+      amount:        payout.amount,
+      razorpayId:    payout.razorpayId,
+      paymentStatus: payout.paymentStatus,
+      createdAt:     payout.createdAt,
+      bankSnapshot:  payout.bankSnapshot,
+    });
   } catch (err) { next(err); }
 };
 

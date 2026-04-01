@@ -3,6 +3,14 @@ const jwt = require('jsonwebtoken');
 const generateToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
+// Claim formula: hourly = weeklyIncome / 49 (7 days × 7 hrs), claim = 6 × hourly
+const calculateClaim = (weeklyIncome) => {
+  const income = Number(weeklyIncome);
+  if (!income || income <= 0) return { hourlyIncome: 0, claimAmount: 0 };
+  const hourly = income / 49;
+  return { hourlyIncome: Math.round(hourly * 100) / 100, claimAmount: Math.round(6 * hourly) };
+};
+
 const calcIncomeLoss = (avgDailyIncome, workingHours, severityFactor) => {
   const hourlyRate = avgDailyIncome / workingHours;
   return Math.round(hourlyRate * workingHours * severityFactor);
@@ -18,4 +26,4 @@ const getSeverityFactor = (disruptionType, value) => {
   return factors[disruptionType] || 0.5;
 };
 
-module.exports = { generateToken, calcIncomeLoss, getSeverityFactor };
+module.exports = { generateToken, calcIncomeLoss, getSeverityFactor, calculateClaim };

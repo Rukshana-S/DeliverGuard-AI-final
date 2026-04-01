@@ -23,13 +23,15 @@ const getLeaderboard = async (req, res, next) => {
     const ranked = users
       .map((u) => ({
         ...u,
-        tier: getTier(u.loyaltyPoints),
-        claimsCount: claimMap[u._id.toString()] || 0,
+        loyaltyPoints: u.loyaltyPoints || 0,
+        riskScore:     u.riskScore     || 0,
+        tier:          getTier(u.loyaltyPoints || 0),
+        claimsCount:   claimMap[u._id.toString()] || 0,
       }))
       .sort((a, b) => b.loyaltyPoints - a.loyaltyPoints || b.claimsCount - a.claimsCount)
       .map((u, i) => ({ ...u, rank: i + 1 }));
 
-    // find current user rank
+    // find current user rank — also return fresh loyaltyPoints
     const myRank = ranked.find((u) => u._id.toString() === req.user._id.toString());
 
     res.json({ leaderboard: ranked, myRank });

@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true },
   phone: { type: String, required: true },
   password: { type: String, required: true, select: false },
-  deliveryPlatform: { type: String, enum: ['Zomato', 'Swiggy', 'Uber Eats', 'Amazon', 'Zepto', 'Blinkit', 'Other'] },
+  deliveryPlatform: { type: String, enum: ['Zomato'] },
   city: { type: String },
   deliveryZones: [{ type: String }],
   avgDailyIncome: { type: Number, default: 0 },
@@ -18,10 +18,11 @@ const userSchema = new mongoose.Schema({
     ifscCode: String,
   },
   onboardingComplete: { type: Boolean, default: false },
-  role: { type: String, enum: ['worker', 'admin'], default: 'worker' },
-  loyaltyPoints: { type: Number, default: 0 },
-  riskScore:     { type: Number, default: 0 },
-  fraudEvents:   { type: Number, default: 0 },
+  role:               { type: String, enum: ['worker', 'admin'], default: 'worker' },
+  loyaltyPoints:      { type: Number, default: 0 },
+  riskScore:          { type: Number, default: 0 },
+  fraudEvents:        { type: Number, default: 0 },
+  isBlocked:          { type: Boolean, default: false },
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {

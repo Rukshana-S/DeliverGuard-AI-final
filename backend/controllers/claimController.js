@@ -2,7 +2,7 @@ const Claim = require('../models/Claim');
 const Policy = require('../models/Policy');
 const InsurancePayment = require('../models/InsurancePayment');
 const { checkFraud } = require('../services/fraudService');
-const { calcIncomeLoss, getSeverityFactor } = require('../utils/helpers');
+const { calculateClaim } = require('../utils/helpers');
 
 const getClaims = async (req, res, next) => {
   try {
@@ -36,11 +36,14 @@ const createClaim = async (req, res, next) => {
         code: 'COVERAGE_INACTIVE',
       });
 
-    const weeklyIncome = latestPayment.weeklyIncome || req.user.avgDailyIncome * 7;
-    const workingHours = req.user.workingHours || 7;
-    const hourlyIncome = weeklyIncome / workingHours;
-    const claimAmount  = Math.round(6 * hourlyIncome);
-    const incomeLoss   = claimAmount;
+    const weeklyIncome = Number(latestPayment.weeklyIncome) || Number(req.user.avgDailyIncome) * 7 || 0;
+    if (!weeklyIncome || weeklyIncome <= 0)
+      return res.status(400).json({ message: 'Invalid weekly income. Please upload salary proof first.' });
+
+    const { hourlyIncome, claimAmount } = calculateClaim(weeklyIncome);
+    const incomeLoss = claimAmount;
+
+    console.log(`[CLAIM] weeklyIncome=${weeklyIncome} hourly=${hourlyIncome} claimAmount=${claimAmount}`);
 
     const claim = await Claim.create({
       userId: req.user._id,

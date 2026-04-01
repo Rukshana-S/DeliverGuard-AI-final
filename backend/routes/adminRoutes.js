@@ -4,6 +4,7 @@ const {
   getFraudAlerts, getAnalytics, getAllUsers, updateUser,
   getAllPayouts, getDisruptions, getSystemLogs, getTraffic,
   approveClaim, rejectClaim, initiatePayout,
+  blockUser, unblockUser,
 } = require('../controllers/adminController');
 const { protect }    = require('../middleware/authMiddleware');
 const { adminOnly }  = require('../middleware/adminMiddleware');
@@ -13,6 +14,8 @@ router.use(protect, adminOnly);
 router.get('/dashboard',         getDashboard);
 router.get('/users',             getAllUsers);
 router.patch('/users/:id',       updateUser);
+router.put('/block-user/:id',    blockUser);
+router.put('/unblock-user/:id',  unblockUser);
 router.get('/policies',          getAllPolicies);
 router.get('/claims',            getAllClaims);
 router.patch('/claims/:id',      updateClaim);

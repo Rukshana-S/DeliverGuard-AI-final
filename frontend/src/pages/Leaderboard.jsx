@@ -1,19 +1,46 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Medal, Star } from 'lucide-react';
+import { Crown, Medal, Star, Shield } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const TIER_COLORS = {
-  Diamond: 'text-cyan-500 bg-cyan-50 dark:bg-cyan-900/30',
-  Gold:    'text-amber-500 bg-amber-50 dark:bg-amber-900/30',
-  Silver:  'text-gray-500 bg-gray-100 dark:bg-gray-800',
+  Diamond: 'text-cyan-500 bg-cyan-50 dark:bg-cyan-900/30 border border-cyan-200',
+  Gold:    'text-amber-600 bg-amber-50 dark:bg-amber-900/30 border border-amber-200',
+  Silver:  'text-gray-500 bg-gray-100 dark:bg-gray-800 border border-gray-200',
 };
 
-const RANK_STYLES = [
-  { bg: 'bg-gradient-to-br from-amber-400 to-yellow-500',  text: 'text-white', label: '🥇' },
-  { bg: 'bg-gradient-to-br from-gray-300 to-gray-400',     text: 'text-white', label: '🥈' },
-  { bg: 'bg-gradient-to-br from-orange-400 to-amber-600',  text: 'text-white', label: '🥉' },
+const TOP3 = [
+  {
+    border: 'border-amber-400',
+    bg:     'bg-amber-50',
+    ring:   'ring-amber-400',
+    avatar: 'from-amber-400 to-yellow-500',
+    rank:   'text-amber-500',
+    icon:   <Crown size={18} className="text-amber-500" />,
+    label:  '🥇',
+    shadow: '0 8px 32px rgba(245,158,11,0.2)',
+  },
+  {
+    border: 'border-gray-300',
+    bg:     'bg-gray-50',
+    ring:   'ring-gray-300',
+    avatar: 'from-gray-400 to-gray-500',
+    rank:   'text-gray-500',
+    icon:   <Medal size={18} className="text-gray-400" />,
+    label:  '🥈',
+    shadow: '0 8px 32px rgba(156,163,175,0.2)',
+  },
+  {
+    border: 'border-orange-400',
+    bg:     'bg-orange-50',
+    ring:   'ring-orange-400',
+    avatar: 'from-orange-400 to-amber-500',
+    rank:   'text-orange-500',
+    icon:   <Medal size={18} className="text-orange-400" />,
+    label:  '🥉',
+    shadow: '0 8px 32px rgba(249,115,22,0.2)',
+  },
 ];
 
 function TierBadge({ tier }) {
@@ -24,31 +51,10 @@ function TierBadge({ tier }) {
   );
 }
 
-function TopCard({ user, rankIndex }) {
-  const style = RANK_STYLES[rankIndex];
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: rankIndex * 0.1 }}
-      className={`flex flex-col items-center p-5 rounded-2xl shadow-lg ${style.bg} ${style.text} relative`}
-    >
-      <span className="text-2xl mb-1">{style.label}</span>
-      <div className="w-12 h-12 rounded-full bg-white/30 flex items-center justify-center text-xl font-bold mb-2">
-        {user.name?.[0]?.toUpperCase()}
-      </div>
-      <p className="font-bold text-sm text-center leading-tight">{user.name}</p>
-      <p className="text-xs opacity-80 mt-0.5">{user.city || '—'}</p>
-      <p className="text-lg font-extrabold mt-2">{user.loyaltyPoints} pts</p>
-      <TierBadge tier={user.tier} />
-    </motion.div>
-  );
-}
-
 export default function Leaderboard() {
   const { user } = useAuth();
-  const [data, setData]       = useState([]);
-  const [myRank, setMyRank]   = useState(null);
+  const [data,    setData]    = useState([]);
+  const [myRank,  setMyRank]  = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -58,8 +64,12 @@ export default function Leaderboard() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Use myRank points (fresh from DB) instead of stale auth context
+  const displayPoints = myRank?.loyaltyPoints ?? user?.loyaltyPoints ?? 0;
+  const displayRank   = myRank?.rank ?? '—';
+  const displayTier   = myRank?.tier ?? 'Silver';
+
   const top3 = data.slice(0, 3);
-  const rest  = data.slice(3);
 
   if (loading) return (
     <div className="flex justify-center py-24">
@@ -68,56 +78,104 @@ export default function Leaderboard() {
   );
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="space-y-6">
 
-      {/* My Rank Card */}
-      {myRank && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="card border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/20 flex items-center gap-4"
-        >
-          <div className="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center text-2xl font-bold text-white">
+      {/* ── Gradient Ranking Banner ── */}
+      <motion.div
+        initial={{ opacity: 0, y: -12 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-2xl px-6 py-5 flex items-center justify-between text-white"
+        style={{
+          background: 'linear-gradient(135deg, #3B82F6 0%, #6366F1 50%, #7C3AED 100%)',
+          boxShadow: '0 8px 32px rgba(99,102,241,0.35)',
+        }}
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center text-2xl font-extrabold border-2 border-white/40">
             {user?.name?.[0]?.toUpperCase()}
           </div>
-          <div className="flex-1">
-            <p className="font-bold text-gray-800 dark:text-gray-100">{user?.name}</p>
-            <p className="text-sm text-gray-500">{user?.city}</p>
+          <div>
+            <p className="text-xs font-semibold text-white/70 uppercase tracking-widest mb-0.5">Your Ranking</p>
+            <p className="text-lg font-extrabold leading-tight">{user?.name}</p>
+            <div className="flex items-center gap-1.5 mt-1">
+              <Shield size={12} className="text-white/70" />
+              <span className="text-xs text-white/80 font-medium">
+                {displayTier} Tier
+              </span>
+            </div>
           </div>
-          <div className="text-right space-y-1">
-            <p className="text-2xl font-extrabold text-blue-600">#{myRank.rank}</p>
-            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">{myRank.loyaltyPoints} pts</p>
-            <TierBadge tier={myRank.tier} />
-          </div>
-        </motion.div>
-      )}
+        </div>
+        <div className="text-right">
+          <p className="text-5xl font-extrabold leading-none">#{displayRank}</p>
+          <p className="text-sm text-white/70 mt-1 flex items-center justify-end gap-1">
+            <Star size={12} className="text-yellow-300" />
+            {displayPoints ?? 0} pts
+          </p>
+        </div>
+      </motion.div>
 
-      {/* Top 3 */}
+      {/* ── Top 3 Highlight Cards ── */}
       {top3.length > 0 && (
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-1.5">
-            <Trophy size={13} /> Top Performers
+            <Crown size={13} className="text-amber-400" /> Top Performers
           </p>
-          <div className="grid grid-cols-3 gap-3">
-            {top3.map((u, i) => <TopCard key={u._id} user={u} rankIndex={i} />)}
+          <div className="grid grid-cols-3 gap-4">
+            {top3.map((u, i) => {
+              const s = TOP3[i];
+              return (
+                <motion.div
+                  key={u._id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className={`relative flex flex-col items-center p-5 rounded-2xl border-2 ${s.border} ${s.bg} dark:bg-gray-800/60`}
+                  style={{ boxShadow: s.shadow }}
+                >
+                  {/* Icon top-right */}
+                  <div className="absolute top-3 right-3">{s.icon}</div>
+
+                  {/* Avatar */}
+                  <div className={`w-14 h-14 rounded-full bg-gradient-to-br ${s.avatar} flex items-center justify-center text-xl font-extrabold text-white mb-3 ring-4 ${s.ring} ring-offset-2`}>
+                    {u.name?.[0]?.toUpperCase()}
+                  </div>
+
+                  <p className="font-bold text-sm text-gray-800 dark:text-gray-100 text-center leading-tight">{u.name}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{u.city || '—'}</p>
+
+                  <div className="mt-2 mb-2">
+                    <TierBadge tier={u.tier} />
+                  </div>
+
+                  <p className="text-base font-extrabold text-gray-700 dark:text-gray-200 flex items-center gap-1">
+                    <Star size={12} className="text-amber-400" />{u.loyaltyPoints ?? 0} pts
+                  </p>
+
+                  {/* Rank badge bottom */}
+                  <div className={`mt-3 text-2xl font-extrabold ${s.rank}`}>
+                    {s.label} #{u.rank}
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* Full Table */}
-      <div className="card overflow-hidden">
+      {/* ── Full Rankings Table ── */}
+      <div className="card overflow-hidden shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-1.5">
           <Medal size={13} /> Full Rankings
         </p>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-xs text-gray-400 border-b border-gray-100 dark:border-gray-800">
-                <th className="text-left pb-2 font-medium">Rank</th>
-                <th className="text-left pb-2 font-medium">Worker</th>
-                <th className="text-left pb-2 font-medium">Tier</th>
-                <th className="text-right pb-2 font-medium">Points</th>
-                <th className="text-right pb-2 font-medium">Risk Score</th>
+              <tr className="text-xs font-semibold text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-800">
+                <th className="text-left pb-3 pr-3">Rank</th>
+                <th className="text-left pb-3">Worker</th>
+                <th className="text-left pb-3">Tier</th>
+                <th className="text-right pb-3">Points</th>
+                <th className="text-right pb-3">Risk Score</th>
               </tr>
             </thead>
             <tbody>
@@ -129,33 +187,53 @@ export default function Leaderboard() {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.03 }}
-                    className={`border-b border-gray-50 dark:border-gray-800/50 transition-colors
-                      ${isMe ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800/30'}`}
+                    className={`border-b border-gray-50 dark:border-gray-800/50 transition-colors ${
+                      isMe
+                        ? 'bg-blue-50 dark:bg-blue-900/20'
+                        : 'hover:bg-gray-50 dark:hover:bg-gray-800/30'
+                    }`}
                   >
+                    {/* Rank */}
                     <td className="py-3 pr-3">
-                      <span className={`font-bold ${i < 3 ? 'text-amber-500' : 'text-gray-500'}`}>
-                        #{u.rank}
-                      </span>
+                      {i < 3 ? (
+                        <span className="text-lg">{['🥇','🥈','🥉'][i]}</span>
+                      ) : (
+                        <span className="font-bold text-gray-400">#{u.rank}</span>
+                      )}
                     </td>
+
+                    {/* Worker */}
                     <td className="py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-xs font-bold text-blue-600">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-xs font-bold text-white shrink-0">
                           {u.name?.[0]?.toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-medium text-gray-800 dark:text-gray-100">{u.name}</p>
+                          <p className={`font-semibold text-gray-800 dark:text-gray-100 ${isMe ? 'text-blue-600 dark:text-blue-400' : ''}`}>
+                            {u.name} {isMe && <span className="text-xs font-normal text-blue-400">(You)</span>}
+                          </p>
                           <p className="text-xs text-gray-400">{u.city || '—'}</p>
                         </div>
                       </div>
                     </td>
+
+                    {/* Tier */}
                     <td className="py-3"><TierBadge tier={u.tier} /></td>
-                    <td className="py-3 text-right font-bold text-gray-800 dark:text-gray-100">
-                      <span className="flex items-center justify-end gap-1">
-                        <Star size={11} className="text-amber-400" />{u.loyaltyPoints}
+
+                    {/* Points */}
+                    <td className="py-3 text-right">
+                      <span className="font-bold text-gray-800 dark:text-gray-100 flex items-center justify-end gap-1">
+                        <Star size={11} className="text-amber-400" />{u.loyaltyPoints ?? 0} pts
                       </span>
                     </td>
+
+                    {/* Risk Score */}
                     <td className="py-3 text-right">
-                      <span className={`font-medium ${u.riskScore > 70 ? 'text-red-500' : u.riskScore > 40 ? 'text-yellow-500' : 'text-green-500'}`}>
+                      <span className={`font-semibold text-xs px-2 py-0.5 rounded-full ${
+                        u.riskScore > 70 ? 'bg-red-100 text-red-600' :
+                        u.riskScore > 40 ? 'bg-yellow-100 text-yellow-600' :
+                        'bg-green-100 text-green-600'
+                      }`}>
                         {u.riskScore}
                       </span>
                     </td>
@@ -164,8 +242,12 @@ export default function Leaderboard() {
               })}
             </tbody>
           </table>
+
           {data.length === 0 && (
-            <p className="text-center text-gray-400 py-8 text-sm">No data yet. Be the first on the leaderboard!</p>
+            <div className="text-center py-12">
+              <Crown size={36} className="mx-auto text-gray-200 mb-3" />
+              <p className="text-gray-400 text-sm">No rankings yet. Be the first!</p>
+            </div>
           )}
         </div>
       </div>

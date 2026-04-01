@@ -22,6 +22,10 @@ api.interceptors.response.use(
         window.location.href = '/login';
       }
     }
+    if (err.response?.status === 403 && err.response?.data?.message === 'ACCOUNT_BLOCKED') {
+      localStorage.removeItem('token');
+      window.location.href = '/login?blocked=1';
+    }
     return Promise.reject(err);
   }
 );

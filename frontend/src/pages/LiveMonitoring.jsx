@@ -31,39 +31,6 @@ const getCityCoords = (city) => {
   return key ? CITY_COORDS[key] : [13.0827, 80.2707];
 };
 
-function MetricCard({ title, value, icon: Icon, color, subtitle, alert, alertText }) {
-  const colors = {
-    blue:   { bg: 'bg-blue-50 dark:bg-blue-900/20',   text: 'text-blue-600',   border: 'border-blue-200' },
-    orange: { bg: 'bg-orange-50 dark:bg-orange-900/20', text: 'text-orange-600', border: 'border-orange-200' },
-    green:  { bg: 'bg-green-50 dark:bg-green-900/20',  text: 'text-green-600',  border: 'border-green-200' },
-    red:    { bg: 'bg-red-50 dark:bg-red-900/20',      text: 'text-red-600',    border: 'border-red-300' },
-  };
-  const c = colors[color] || colors.blue;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`card relative flex items-center gap-4 ${alert ? `border-2 ${c.border}` : ''}`}
-    >
-      {alert && (
-        <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
-      )}
-      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${c.bg} ${c.text}`}>
-        {Icon && <Icon size={22} />}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm text-gray-500 dark:text-gray-400">{title}</p>
-        <p className={`text-2xl font-bold ${alert ? c.text : 'text-gray-800 dark:text-gray-100'}`}>{value}</p>
-        {alert && alertText
-          ? <p className={`text-xs font-semibold mt-0.5 ${c.text}`}>{alertText}</p>
-          : subtitle && <p className="text-xs text-gray-400">{subtitle}</p>
-        }
-      </div>
-    </motion.div>
-  );
-}
-
 export default function LiveMonitoring() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -71,7 +38,7 @@ export default function LiveMonitoring() {
   const [loading,     setLoading]     = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [logs,        setLogs]        = useState([]);
-  const [simulated,   setSimulated]   = useState(false);
+  const [simulated,   setSimulated]   = useState(true);
   const [coords,      setCoords]      = useState([13.0827, 80.2707]);
 
   useEffect(() => {
@@ -109,55 +76,59 @@ export default function LiveMonitoring() {
   const handleSimulate = () => {
     setSimulated(true);
     addLog('Disruption simulated: Heavy Rain 65mm — HIGH RISK', 'alert');
-    navigate('/claim/detected');
   };
 
-  const weather  = data?.weather;
-  const aqi      = data?.aqi;
-  const traffic  = data?.traffic;
-  const rainVal  = simulated ? 65 : (weather?.rain ?? 0);
+  const weather   = data?.weather;
+  const aqi       = data?.aqi;
+  const traffic   = data?.traffic;
+  const rainVal   = simulated ? 65 : (weather?.rain ?? 0);
   const rainAlert = simulated || rainVal > 50;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
 
-      {/* Header */}
+      {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">
             Live Environmental Monitoring
             {user?.city && <span className="text-blue-500 ml-2 text-base">— {user.city}</span>}
           </h2>
-          {lastUpdated && <p className="text-xs text-gray-400 mt-0.5">Last updated: {lastUpdated} · Auto-refreshes every 5 min</p>}
+          {lastUpdated && (
+            <p className="text-xs text-gray-400 mt-0.5">
+              Last updated: {lastUpdated} · Auto-refreshes every 5 min
+            </p>
+          )}
         </div>
         <button onClick={fetchData} className="btn-secondary text-sm flex items-center gap-2">
           <RefreshCw size={14} /> Refresh
         </button>
       </div>
 
-      {/* Alert Banner — only when simulated */}
+      {/* ── Top Alert Banner (always visible when simulated) ── */}
       <AnimatePresence>
-        {simulated && (
+        {rainAlert && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="flex items-start gap-3 px-4 py-3 rounded-xl border border-red-300 bg-red-50 dark:bg-red-900/20 dark:border-red-700"
+            exit={{ opacity: 0, y: -12 }}
+            className="flex items-start gap-3 px-4 py-4 rounded-xl border-2 border-red-400 dark:border-red-600"
+            style={{ backgroundColor: '#FEE2E2' }}
           >
-            <AlertTriangle size={18} className="text-red-500 shrink-0 mt-0.5" />
+            <AlertTriangle size={22} className="text-red-600 shrink-0 mt-0.5" />
             <div>
-              <p className="font-semibold text-red-700 dark:text-red-400 text-sm">
-                Active Disruption Detected: Heavy Rain
+              <p className="font-bold text-red-700 text-sm">
+                ⚠️ Active Disruption Detected: Heavy Rain
               </p>
-              <p className="text-xs text-red-500 dark:text-red-400 mt-0.5">
-                You are eligible for compensation
+              <p className="text-xs text-red-600 mt-0.5 font-medium">
+                ✅ You are eligible for compensation
               </p>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Metric cards */}
+      {/* ── Metric Cards ── */}
       {loading ? (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
@@ -166,58 +137,124 @@ export default function LiveMonitoring() {
         </div>
       ) : (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Rain card — special when simulated */}
-          <MetricCard
-            title="Rainfall"
-            value={`${rainVal} mm`}
-            icon={CloudRain}
-            color={rainAlert ? 'red' : 'blue'}
-            subtitle="Normal"
-            alert={rainAlert}
-            alertText={rainAlert ? 'Heavy Rain Detected' : null}
-          />
-          <MetricCard
-            title="Temperature"
-            value={weather ? `${weather.temp}°C` : 'N/A'}
-            icon={Thermometer}
-            color={weather?.temp > 42 ? 'red' : 'orange'}
-            subtitle={weather?.humidity ? `Humidity: ${weather.humidity}%` : '—'}
-          />
-          <MetricCard
-            title="AQI Level"
-            value={aqi ? aqi.aqi : 'N/A'}
-            icon={Wind}
-            color={aqi?.aqi > 300 ? 'red' : aqi?.aqi > 150 ? 'orange' : 'green'}
-            subtitle={aqi?.aqi > 300 ? 'Hazardous' : aqi?.aqi > 150 ? 'Unhealthy' : 'Good'}
-          />
-          <MetricCard
-            title="Traffic Ratio"
-            value={traffic ? traffic.trafficRatio?.toFixed(2) : 'N/A'}
-            icon={TrafficCone}
-            color={traffic?.trafficRatio < 0.4 ? 'red' : traffic?.trafficRatio < 0.6 ? 'orange' : 'green'}
-            subtitle={traffic?.trafficRatio < 0.4 ? 'Severe jam' : 'Normal flow'}
-          />
+
+          {/* Rainfall — dominant alert card */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="card relative flex items-center gap-4"
+            style={rainAlert ? {
+              border: '2px solid #EF4444',
+              backgroundColor: '#FEF2F2',
+              boxShadow: '0 0 0 4px rgba(239,68,68,0.12), 0 4px 16px rgba(239,68,68,0.15)',
+            } : {}}
+          >
+            {rainAlert && (
+              <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+            )}
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+              rainAlert ? 'bg-red-100 text-red-600' : 'bg-blue-50 dark:bg-blue-900/20 text-blue-600'
+            }`}>
+              <CloudRain size={22} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-gray-500 dark:text-gray-400">Rainfall</p>
+              <p className={`text-2xl font-bold ${rainAlert ? 'text-red-600' : 'text-gray-800 dark:text-gray-100'}`}>
+                {rainVal} mm
+              </p>
+              {rainAlert
+                ? <p className="text-xs font-semibold text-red-600 mt-0.5">⚠️ Heavy Rain Detected</p>
+                : <p className="text-xs text-gray-400">Normal</p>
+              }
+            </div>
+          </motion.div>
+
+          {/* Temperature */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            className="card flex items-center gap-4 opacity-80"
+          >
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-orange-50 dark:bg-orange-900/20 text-orange-500">
+              <Thermometer size={22} />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Temperature</p>
+              <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+                {weather ? `${weather.temp}°C` : 'N/A'}
+              </p>
+              <p className="text-xs text-gray-400">
+                {weather?.humidity ? `Humidity: ${weather.humidity}%` : '—'}
+              </p>
+            </div>
+          </motion.div>
+
+          {/* AQI */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="card flex items-center gap-4 opacity-80"
+          >
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-green-50 dark:bg-green-900/20 text-green-600">
+              <Wind size={22} />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">AQI Level</p>
+              <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+                {aqi ? aqi.aqi : 'N/A'}
+              </p>
+              <p className="text-xs text-gray-400">
+                {aqi?.aqi > 300 ? 'Hazardous' : aqi?.aqi > 150 ? 'Unhealthy' : 'Good'}
+              </p>
+            </div>
+          </motion.div>
+
+          {/* Traffic */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="card flex items-center gap-4 opacity-80"
+          >
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-purple-50 dark:bg-purple-900/20 text-purple-600">
+              <TrafficCone size={22} />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Traffic Ratio</p>
+              <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+                {traffic ? traffic.trafficRatio?.toFixed(2) : 'N/A'}
+              </p>
+              <p className="text-xs text-gray-400">
+                {traffic?.trafficRatio < 0.4 ? 'Severe jam' : 'Normal flow'}
+              </p>
+            </div>
+          </motion.div>
         </div>
       )}
 
-      {/* Active Disruption Alerts — only when simulated */}
+      {/* ── Active Disruption Alerts section ── */}
       <AnimatePresence>
-        {simulated && (
+        {rainAlert && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
             className="space-y-2"
           >
-            <p className="text-sm font-semibold text-red-600 flex items-center gap-1.5">
+            <p className="text-sm font-bold text-red-600 flex items-center gap-1.5">
               <AlertTriangle size={15} /> Active Disruption Alerts
             </p>
-            <div className="card border-l-4 border-red-500 flex items-center justify-between bg-red-50 dark:bg-red-900/10">
+            <div
+              className="flex items-center justify-between rounded-xl px-4 py-3 border-l-4 border-red-500"
+              style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderLeft: '4px solid #EF4444' }}
+            >
               <div>
-                <p className="font-semibold text-red-700 dark:text-red-400">Heavy Rain Detected</p>
-                <p className="text-sm text-gray-500 mt-0.5">Intensity: 65</p>
+                <p className="font-bold text-red-700 text-sm">Heavy Rain Detected</p>
+                <p className="text-xs text-gray-500 mt-0.5">Value: 65</p>
               </div>
-              <span className="font-bold uppercase text-sm px-3 py-1 rounded-full bg-white dark:bg-gray-900 text-red-500">
+              <span className="text-xs font-bold px-3 py-1 rounded-full text-white bg-red-500">
                 HIGH RISK
               </span>
             </div>
@@ -225,23 +262,57 @@ export default function LiveMonitoring() {
         )}
       </AnimatePresence>
 
-      {/* Simulate Disruption button */}
-      <motion.button
-        whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-        onClick={handleSimulate}
-        className="w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-semibold rounded-2xl px-6 py-4 flex items-center justify-between transition-all shadow-sm"
-      >
-        <div className="flex items-center gap-3">
-          <Zap size={22} />
-          <div className="text-left">
-            <p className="text-base font-bold">Simulate Disruption — Heavy Rain</p>
-            <p className="text-xs text-red-100 mt-0.5">Rain = 65mm · Status = HIGH RISK</p>
-          </div>
-        </div>
-        <span className="text-xs bg-white/20 px-3 py-1 rounded-full shrink-0">Demo Mode</span>
-      </motion.button>
+      {/* ── Bottom Action Banner ── */}
+      <AnimatePresence>
+        {rainAlert ? (
+          /* Confirmed disruption — file claim banner */
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="w-full rounded-2xl px-6 py-4 flex items-center justify-between text-white shadow-lg"
+            style={{ background: 'linear-gradient(135deg, #EF4444, #F97316)' }}
+          >
+            <div className="flex items-center gap-3">
+              <Zap size={22} />
+              <div>
+                <p className="font-bold text-base">⚡ File Disruption Claim</p>
+                <p className="text-xs text-red-100 mt-0.5">✅ Disruption confirmed — instant payout eligible</p>
+              </div>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/claim/detected')}
+              className="text-xs font-bold px-4 py-2 rounded-full bg-white text-red-600 shrink-0"
+            >
+              Eligible →
+            </motion.button>
+          </motion.div>
+        ) : (
+          /* Normal state — simulate button */
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={handleSimulate}
+            className="w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-semibold rounded-2xl px-6 py-4 flex items-center justify-between transition-all shadow-sm"
+          >
+            <div className="flex items-center gap-3">
+              <Zap size={22} />
+              <div className="text-left">
+                <p className="text-base font-bold">Simulate Disruption — Heavy Rain</p>
+                <p className="text-xs text-red-100 mt-0.5">Rain = 65mm · Status = HIGH RISK</p>
+              </div>
+            </div>
+            <span className="text-xs bg-white/20 px-3 py-1 rounded-full shrink-0">Demo Mode</span>
+          </motion.button>
+        )}
+      </AnimatePresence>
 
-      {/* Map + Logs */}
+      {/* ── Map + Logs ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 card">
           <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-4 flex items-center gap-2">

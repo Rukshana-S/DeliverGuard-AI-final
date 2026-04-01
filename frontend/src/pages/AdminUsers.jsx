@@ -7,17 +7,17 @@ const STATUS_BADGE = (active) =>
   active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
 
 export default function AdminUsers() {
-  const [users, setUsers]     = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch]   = useState('');
-  const [city, setCity]       = useState('all');
+  const [users,    setUsers]    = useState([]);
+  const [loading,  setLoading]  = useState(true);
+  const [search,   setSearch]   = useState('');
+  const [city,     setCity]     = useState('all');
   const [platform, setPlatform] = useState('all');
 
   const fetchUsers = () => {
     const params = {};
-    if (search)              params.search   = search;
-    if (city !== 'all')      params.city     = city;
-    if (platform !== 'all')  params.platform = platform;
+    if (search)             params.search   = search;
+    if (city !== 'all')     params.city     = city;
+    if (platform !== 'all') params.platform = platform;
     setLoading(true);
     api.get('/admin/users', { params })
       .then((r) => setUsers(r.data))
@@ -27,15 +27,22 @@ export default function AdminUsers() {
 
   useEffect(() => { fetchUsers(); }, [search, city, platform]); // eslint-disable-line
 
-  const toggleStatus = async (id, active) => {
+  const handleBlock = async (id) => {
     try {
-      const { data } = await api.patch(`/admin/users/${id}`, { action: active ? 'suspend' : 'activate' });
-      setUsers((prev) => prev.map((u) => (u._id === id ? data : u)));
-    } catch { alert('Failed to update worker'); }
+      await api.put(`/admin/block-user/${id}`);
+      setUsers((prev) => prev.map((u) => u._id === id ? { ...u, isBlocked: true } : u));
+    } catch { alert('Failed to block user'); }
   };
 
-  const cities     = ['all', 'Chennai', 'Coimbatore', 'Madurai', 'Salem', 'Tiruchirappalli', 'Tirunelveli'];
-  const platforms  = ['all', 'Zomato', 'Swiggy', 'Uber Eats', 'Amazon', 'Zepto', 'Blinkit'];
+  const handleUnblock = async (id) => {
+    try {
+      await api.put(`/admin/unblock-user/${id}`);
+      setUsers((prev) => prev.map((u) => u._id === id ? { ...u, isBlocked: false } : u));
+    } catch { alert('Failed to unblock user'); }
+  };
+
+  const cities    = ['all', 'Chennai', 'Coimbatore', 'Madurai', 'Salem', 'Tiruchirappalli', 'Tirunelveli'];
+  const platforms = ['all', 'Zomato'];
 
   return (
     <div className="space-y-4">
@@ -80,10 +87,13 @@ export default function AdminUsers() {
             <tbody>
               {users.map((u) => (
                 <motion.tr key={u._id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                  className="border-b border-gray-50 dark:border-gray-800 last:border-0">
+                  className="border-b border-gray-50 dark:border-gray-800 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
                   <td className="py-3 pr-4">
                     <p className="font-medium">{u.name}</p>
                     <p className="text-xs text-gray-400">{u.email}</p>
+                    {u.isBlocked && (
+                      <span className="text-xs font-semibold text-red-500">Blocked</span>
+                    )}
                   </td>
                   <td className="py-3 pr-4">{u.phone}</td>
                   <td className="py-3 pr-4">{u.city || '—'}</td>
@@ -96,12 +106,17 @@ export default function AdminUsers() {
                     </span>
                   </td>
                   <td className="py-3">
-                    <button
-                      onClick={() => toggleStatus(u._id, u.onboardingComplete)}
-                      className={`text-xs hover:underline ${u.onboardingComplete ? 'text-red-600' : 'text-green-600'}`}
-                    >
-                      {u.onboardingComplete ? 'Suspend' : 'Activate'}
-                    </button>
+                    {u.isBlocked ? (
+                      <button onClick={() => handleUnblock(u._id)}
+                        className="text-xs font-semibold px-3 py-1 rounded-full bg-green-500 text-white hover:bg-green-600 transition-colors">
+                        Unblock
+                      </button>
+                    ) : (
+                      <button onClick={() => handleBlock(u._id)}
+                        className="text-xs font-semibold px-3 py-1 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors">
+                        Block
+                      </button>
+                    )}
                   </td>
                 </motion.tr>
               ))}

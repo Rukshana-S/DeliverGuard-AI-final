@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { register } from '../services/authService';
 import { motion } from 'framer-motion';
 
-const PLATFORMS = ['Zomato', 'Swiggy', 'Uber Eats', 'Zepto', 'Blinkit', 'Other'];
+const PLATFORMS = ['Zomato'];
 
 export default function Register() {
   const [form, setForm] = useState({

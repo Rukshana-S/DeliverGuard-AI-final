@@ -11,8 +11,7 @@ import {
 } from 'recharts';
 import {
   HardHat, ShieldCheck, ClipboardList, CalendarCheck,
-  CheckCircle, XCircle, ShieldAlert, Banknote,
-  Users, FileSearch, DollarSign, Zap, AlertTriangle, TrafficCone,
+  Banknote, Users, FileSearch, DollarSign, Zap, AlertTriangle, TrafficCone,
 } from 'lucide-react';
 
 const COLORS = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4'];
@@ -42,25 +41,22 @@ export default function AdminDashboard() {
   }, []);
 
   const statCards = stats ? [
-    { title: 'Total Workers',   value: stats.totalWorkers,                    icon: HardHat,       color: 'blue'   },
-    { title: 'Active Policies', value: stats.activePolicies,                  icon: ShieldCheck,   color: 'green'  },
-    { title: 'Total Claims',    value: stats.totalClaims,                     icon: ClipboardList, color: 'orange' },
-    { title: 'Claims Today',    value: stats.claimsToday,                     icon: CalendarCheck, color: 'purple' },
-    { title: 'Approved',        value: stats.claimsApproved,                  icon: CheckCircle,   color: 'green'  },
-    { title: 'Rejected',        value: stats.claimsRejected,                  icon: XCircle,       color: 'red'    },
-    { title: 'Fraud Alerts',    value: stats.fraudAlerts,                     icon: ShieldAlert,   color: 'red'    },
-    { title: 'Monthly Payouts', value: formatCurrency(stats.totalPayouts),    icon: Banknote,      color: 'blue'   },
+    { title: 'Total Workers',   value: stats.totalWorkers,                 icon: HardHat,       color: 'blue'   },
+    { title: 'Active Policies', value: stats.activePolicies,               icon: ShieldCheck,   color: 'green'  },
+    { title: 'Total Claims',    value: stats.totalClaims,                  icon: ClipboardList, color: 'orange' },
+    { title: 'Claims Today',    value: stats.claimsToday,                  icon: CalendarCheck, color: 'purple' },
+    { title: 'Monthly Payouts', value: formatCurrency(stats.totalPayouts), icon: Banknote,      color: 'blue'   },
   ] : [];
 
   return (
     <div className="space-y-6">
       {/* Stat cards */}
       {loading ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(8)].map((_, i) => <div key={i} className="card h-24 animate-pulse bg-gray-100 dark:bg-gray-800" />)}
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          {[...Array(5)].map((_, i) => <div key={i} className="card h-24 animate-pulse bg-gray-100 dark:bg-gray-800" />)}
         </div>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           {statCards.map((s) => <StatCard key={s.title} {...s} />)}
         </div>
       )}
