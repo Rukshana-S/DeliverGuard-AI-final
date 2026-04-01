@@ -39,10 +39,10 @@ Currently, there is no reliable system to compensate short-term income loss.
 ---
 
 ## Adversarial Defense & Anti-Spoofing
-
 <p align="center">
-  <img src="assets/flowchart.jpeg" alt="Fraud Detection Flowchart" width="700"/>
+  <img src="assets/ocrWorkflow.jpeg" alt="Ocr_workflow" width="700"/>
 </p>
+
 
 DeliverGuard AI implements a multi-layer fraud detection system that validates user activity using location, device, network, and behavioral signals. Each feature is designed to detect a specific type of fraud and contribute to a unified risk score.
 
@@ -191,11 +191,10 @@ Maintain historical logs for analysis.
 **Tech Stack:**  
 - MongoDB  
 - Logging system
-
-
+  
 <p align="center">
-<img src="assets/FraudDetection.jpeg" alt="Fraud Detection Flowchart" width="700"/>
-</p>
+  <img src="assets/Growth_of_revenue.png" alt="Future Revenue" width="700"/>
+</p> 
 
 
 ---
@@ -336,10 +335,10 @@ Assign weighted risk scores.
 ---
 
 ## Insurance Plans
-
 <p align="center">
-  <img src="assets/InsurancePlan.png" alt="Insurance Plan" width="700"/>
+  <img src="assets/Ocr.jpeg" alt="Ocr" width="700"/>
 </p>
+
 
 | Plan     | Premium | Hour Threshold | Max Weekly Payout |
 |----------|--------|---------------|-------------------|
@@ -415,10 +414,10 @@ To ensure accurate and automated income verification, DeliverGuard AI uses **OCR
    - Date and time  
 4. Extracted data is processed and structured in the system
 
-
 <p align="center">
-  <img src="assets/Ocr.jpeg" alt="Ocr" width="700"/>
+  <img src="assets/flowchart.jpeg" alt="Fraud Detection Flowchart" width="700"/>
 </p>
+
 
 
 Example:  
@@ -451,9 +450,8 @@ To enhance reliability, the system can cross-verify user income with Zomato deli
 ###   Workflow
 
 <p align="center">
-  <img src="assets/ocrWorkflow.jpeg" alt="Ocr_workflow" width="700"/>
-</p>
-
+  <img src="assets/Badges.jpeg" alt="Future Revenue" width="700"/>
+</p> 
 
 ###   Technology Used
 
@@ -467,8 +465,9 @@ To enhance reliability, the system can cross-verify user income with Zomato deli
 ## Loyalty Rewards
 
 <p align="center">
-  <img src="assets/Badges.png" alt="Loyalty Badges" width="700"/>
+<img src="assets/FraudDetection.jpeg" alt="Fraud Detection Flowchart" width="700"/>
 </p>
+
 
 ### Levels
 - Silver → 3 months  
@@ -540,10 +539,10 @@ To enhance reliability, the system can cross-verify user income with Zomato deli
 - Revenue increases consistently over time as the user base expands.
 - Income-based premium model ensures revenue scales with worker earnings.
 - Growth demonstrates strong scalability and long-term sustainability of the platform.
-
 <p align="center">
-  <img src="assets/Growth_of_revenue.png" alt="Future Revenue" width="700"/>
-</p> 
+  <img src="assets/InsurancePlan.png" alt="Insurance Plan" width="700"/>
+</p>
+
 
  > More users → More revenue → Higher profit
 > 
