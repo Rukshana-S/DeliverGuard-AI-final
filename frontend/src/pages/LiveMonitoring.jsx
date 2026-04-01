@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getLiveData } from '../services/monitoringService';
 import MapComponent from '../components/MapComponent';
-import StatCard from '../components/StatCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -32,27 +31,49 @@ const getCityCoords = (city) => {
   return key ? CITY_COORDS[key] : [13.0827, 80.2707];
 };
 
-const RISK_COLORS = {
-  low: 'text-green-500', medium: 'text-yellow-500',
-  high: 'text-orange-500', critical: 'text-red-500',
-};
+function MetricCard({ title, value, icon: Icon, color, subtitle, alert, alertText }) {
+  const colors = {
+    blue:   { bg: 'bg-blue-50 dark:bg-blue-900/20',   text: 'text-blue-600',   border: 'border-blue-200' },
+    orange: { bg: 'bg-orange-50 dark:bg-orange-900/20', text: 'text-orange-600', border: 'border-orange-200' },
+    green:  { bg: 'bg-green-50 dark:bg-green-900/20',  text: 'text-green-600',  border: 'border-green-200' },
+    red:    { bg: 'bg-red-50 dark:bg-red-900/20',      text: 'text-red-600',    border: 'border-red-300' },
+  };
+  const c = colors[color] || colors.blue;
 
-const DISRUPTION_LABELS = {
-  heavy_rain: 'Heavy Rain Detected', extreme_heat: 'Extreme Heat Detected',
-  aqi_hazard: 'AQI Hazard Detected', traffic_jam: 'Traffic Jam Detected',
-};
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`card relative flex items-center gap-4 ${alert ? `border-2 ${c.border}` : ''}`}
+    >
+      {alert && (
+        <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+      )}
+      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${c.bg} ${c.text}`}>
+        {Icon && <Icon size={22} />}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm text-gray-500 dark:text-gray-400">{title}</p>
+        <p className={`text-2xl font-bold ${alert ? c.text : 'text-gray-800 dark:text-gray-100'}`}>{value}</p>
+        {alert && alertText
+          ? <p className={`text-xs font-semibold mt-0.5 ${c.text}`}>{alertText}</p>
+          : subtitle && <p className="text-xs text-gray-400">{subtitle}</p>
+        }
+      </div>
+    </motion.div>
+  );
+}
 
 export default function LiveMonitoring() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [data,        setData]        = useState(null);
+  const [loading,     setLoading]     = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [logs, setLogs] = useState([]);
-  const [simulated, setSimulated] = useState(false);
-  const [coords, setCoords] = useState([13.0827, 80.2707]);
+  const [logs,        setLogs]        = useState([]);
+  const [simulated,   setSimulated]   = useState(false);
+  const [coords,      setCoords]      = useState([13.0827, 80.2707]);
 
-  // Set coords from user city
   useEffect(() => {
     if (user?.city) setCoords(getCityCoords(user.city));
   }, [user?.city]);
@@ -72,11 +93,6 @@ export default function LiveMonitoring() {
       if (res.data?.weather) addLog(`Rain: ${res.data.weather.rain}mm | Temp: ${res.data.weather.temp}°C`, 'info');
       if (res.data?.aqi)     addLog(`AQI: ${res.data.aqi.aqi} — ${city}`, 'info');
       if (res.data?.traffic) addLog(`Traffic ratio: ${res.data.traffic.trafficRatio?.toFixed(2)}`, 'info');
-      if (res.data?.disruptions?.length > 0) {
-        res.data.disruptions.forEach((d) =>
-          addLog(`Alert: ${d.type.replace(/_/g, ' ')} — severity: ${d.severity}`, 'alert')
-        );
-      }
     } catch {
       addLog('API unavailable — showing cached data', 'warning');
     } finally {
@@ -96,13 +112,15 @@ export default function LiveMonitoring() {
     navigate('/claim/detected');
   };
 
-  const weather = data?.weather;
-  const aqi = data?.aqi;
-  const traffic = data?.traffic;
-  const disruptions = data?.disruptions || [];
+  const weather  = data?.weather;
+  const aqi      = data?.aqi;
+  const traffic  = data?.traffic;
+  const rainVal  = simulated ? 65 : (weather?.rain ?? 0);
+  const rainAlert = simulated || rainVal > 50;
 
   return (
     <div className="space-y-6">
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -117,6 +135,28 @@ export default function LiveMonitoring() {
         </button>
       </div>
 
+      {/* Alert Banner — only when simulated */}
+      <AnimatePresence>
+        {simulated && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="flex items-start gap-3 px-4 py-3 rounded-xl border border-red-300 bg-red-50 dark:bg-red-900/20 dark:border-red-700"
+          >
+            <AlertTriangle size={18} className="text-red-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-red-700 dark:text-red-400 text-sm">
+                Active Disruption Detected: Heavy Rain
+              </p>
+              <p className="text-xs text-red-500 dark:text-red-400 mt-0.5">
+                You are eligible for compensation
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Metric cards */}
       {loading ? (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -126,42 +166,68 @@ export default function LiveMonitoring() {
         </div>
       ) : (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard title="Rainfall"      value={weather ? `${weather.rain} mm/hr` : 'N/A'} icon={CloudRain}    color={weather?.rain > 50 ? 'red' : 'blue'}   subtitle={weather?.rain > 50 ? 'Above threshold' : 'Normal'} />
-          <StatCard title="Temperature"   value={weather ? `${weather.temp}°C` : 'N/A'}    icon={Thermometer}  color={weather?.temp > 42 ? 'red' : 'orange'} subtitle={weather?.humidity ? `Humidity: ${weather.humidity}%` : '—'} />
-          <StatCard title="AQI Level"     value={aqi ? aqi.aqi : 'N/A'}                     icon={Wind}         color={aqi?.aqi > 300 ? 'red' : aqi?.aqi > 150 ? 'orange' : 'green'} subtitle={aqi?.aqi > 300 ? 'Hazardous' : aqi?.aqi > 150 ? 'Unhealthy' : 'Good'} />
-          <StatCard title="Traffic Ratio" value={traffic ? traffic.trafficRatio?.toFixed(2) : 'N/A'} icon={TrafficCone} color={traffic?.trafficRatio < 0.4 ? 'red' : traffic?.trafficRatio < 0.6 ? 'orange' : 'green'} subtitle={traffic?.trafficRatio < 0.4 ? 'Severe jam' : 'Normal flow'} />
+          {/* Rain card — special when simulated */}
+          <MetricCard
+            title="Rainfall"
+            value={`${rainVal} mm`}
+            icon={CloudRain}
+            color={rainAlert ? 'red' : 'blue'}
+            subtitle="Normal"
+            alert={rainAlert}
+            alertText={rainAlert ? 'Heavy Rain Detected' : null}
+          />
+          <MetricCard
+            title="Temperature"
+            value={weather ? `${weather.temp}°C` : 'N/A'}
+            icon={Thermometer}
+            color={weather?.temp > 42 ? 'red' : 'orange'}
+            subtitle={weather?.humidity ? `Humidity: ${weather.humidity}%` : '—'}
+          />
+          <MetricCard
+            title="AQI Level"
+            value={aqi ? aqi.aqi : 'N/A'}
+            icon={Wind}
+            color={aqi?.aqi > 300 ? 'red' : aqi?.aqi > 150 ? 'orange' : 'green'}
+            subtitle={aqi?.aqi > 300 ? 'Hazardous' : aqi?.aqi > 150 ? 'Unhealthy' : 'Good'}
+          />
+          <MetricCard
+            title="Traffic Ratio"
+            value={traffic ? traffic.trafficRatio?.toFixed(2) : 'N/A'}
+            icon={TrafficCone}
+            color={traffic?.trafficRatio < 0.4 ? 'red' : traffic?.trafficRatio < 0.6 ? 'orange' : 'green'}
+            subtitle={traffic?.trafficRatio < 0.4 ? 'Severe jam' : 'Normal flow'}
+          />
         </div>
       )}
 
-      {/* Disruption alerts */}
+      {/* Active Disruption Alerts — only when simulated */}
       <AnimatePresence>
-        {disruptions.length > 0 && (
-          <div className="space-y-2">
+        {simulated && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="space-y-2"
+          >
             <p className="text-sm font-semibold text-red-600 flex items-center gap-1.5">
               <AlertTriangle size={15} /> Active Disruption Alerts
             </p>
-            {disruptions.map((d, i) => (
-              <motion.div key={i} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0 }} transition={{ delay: i * 0.1 }}
-                className="card border-l-4 border-red-500 flex items-center justify-between bg-red-50 dark:bg-red-900/10"
-              >
-                <div>
-                  <p className="font-semibold text-red-700 dark:text-red-400">
-                    {DISRUPTION_LABELS[d.type] || d.type.replace(/_/g, ' ')}
-                  </p>
-                  <p className="text-sm text-gray-500 mt-0.5">Intensity: {d.value}</p>
-                </div>
-                <span className={`font-bold uppercase text-sm px-3 py-1 rounded-full bg-white dark:bg-gray-900 ${RISK_COLORS[d.severity]}`}>
-                  {d.severity}
-                </span>
-              </motion.div>
-            ))}
-          </div>
+            <div className="card border-l-4 border-red-500 flex items-center justify-between bg-red-50 dark:bg-red-900/10">
+              <div>
+                <p className="font-semibold text-red-700 dark:text-red-400">Heavy Rain Detected</p>
+                <p className="text-sm text-gray-500 mt-0.5">Intensity: 65</p>
+              </div>
+              <span className="font-bold uppercase text-sm px-3 py-1 rounded-full bg-white dark:bg-gray-900 text-red-500">
+                HIGH RISK
+              </span>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Simulate Disruption */}
-      <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+      {/* Simulate Disruption button */}
+      <motion.button
+        whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
         onClick={handleSimulate}
         className="w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-semibold rounded-2xl px-6 py-4 flex items-center justify-between transition-all shadow-sm"
       >
@@ -181,7 +247,7 @@ export default function LiveMonitoring() {
           <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-4 flex items-center gap-2">
             <MapPin size={14} /> Live Disruption Map — {user?.city || 'Your City'}
           </h3>
-          <MapComponent center={coords} disruptions={disruptions} />
+          <MapComponent center={coords} disruptions={[]} />
         </div>
 
         <div className="card overflow-hidden flex flex-col">

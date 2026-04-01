@@ -5,7 +5,7 @@ import ClaimStepper from './ClaimStepper';
 import { getCoverageStatus } from '../../services/premiumService';
 import { createClaim } from '../../services/claimService';
 import { useAuth } from '../../context/AuthContext';
-import { CloudRain, Lock, ShieldCheck, Clock } from 'lucide-react';
+import { Lock, ShieldCheck, Clock, MapPin } from 'lucide-react';
 
 export default function ClaimDetected() {
   const navigate = useNavigate();
@@ -84,40 +84,55 @@ export default function ClaimDetected() {
     <div className="max-w-lg mx-auto space-y-5">
       <ClaimStepper />
 
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-        className="card border-l-4 border-red-500 bg-red-50 dark:bg-red-900/20"
+      {/* Top bar — location + demo badge */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700"
       >
-        <div className="flex items-center gap-3 mb-4">
-          <CloudRain size={36} className="text-red-500" />
-          <div>
-            <p className="text-xs font-semibold text-red-500 uppercase tracking-wide">Disruption Detected</p>
-            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Heavy Rain Alert</h2>
-          </div>
+        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+          <MapPin size={14} className="text-blue-500" />
+          <span>Location verified: <span className="font-semibold">{user?.city || 'Unknown'}</span></span>
         </div>
+        <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400">
+          Demo Mode
+        </span>
+      </motion.div>
 
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          <div className="bg-white dark:bg-gray-900 rounded-xl p-3 border border-red-100 dark:border-red-800">
-            <p className="text-xs text-gray-400">Rainfall</p>
-            <p className="text-xl font-extrabold text-red-600">65 mm/hr</p>
+      {/* Detected Disruptions */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="card space-y-3"
+      >
+        <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Detected Disruptions</p>
+
+        {/* Single disruption card */}
+        <div className="flex items-center gap-4 p-3 rounded-xl border-2 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
+          <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/40 flex items-center justify-center text-xl shrink-0">
+            🌧️
           </div>
-          <div className="bg-white dark:bg-gray-900 rounded-xl p-3 border border-red-100 dark:border-red-800">
-            <p className="text-xs text-gray-400">Risk Level</p>
-            <p className="text-xl font-extrabold text-red-600">HIGH RISK</p>
+          <div className="flex-1">
+            <p className="font-semibold text-gray-800 dark:text-gray-100">Heavy Rain</p>
+            <p className="text-xs text-gray-500 mt-0.5">Value: 65 · Threshold exceeded</p>
           </div>
-          <div className="col-span-2 bg-white dark:bg-gray-900 rounded-xl p-3 border border-gray-100 dark:border-gray-800">
-            <p className="text-xs text-gray-400">Location</p>
-            <p className="font-semibold text-gray-800 dark:text-gray-100">{user?.city || 'Unknown'}</p>
-          </div>
+          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-red-500 text-white shrink-0">
+            Selected
+          </span>
         </div>
       </motion.div>
 
-      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+      {/* Coverage active */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.2 }}
-        className="card bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 flex items-center gap-3"
+        className="flex items-center gap-3 px-4 py-3 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
       >
-        <ShieldCheck size={22} className="text-green-600 shrink-0" />
+        <ShieldCheck size={20} className="text-green-600 shrink-0" />
         <div>
-          <p className="font-semibold text-green-700 dark:text-green-400">Your income protection is active.</p>
+          <p className="font-semibold text-green-700 dark:text-green-400 text-sm">Your income protection is active.</p>
           {coverage?.inGrace && (
             <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5 flex items-center gap-1">
               <Clock size={11} /> Grace period — pay premium soon.
@@ -133,7 +148,9 @@ export default function ClaimDetected() {
       )}
 
       <div className="flex flex-col gap-3">
-        <button onClick={handleSubmit} disabled={submitting}
+        <button
+          onClick={handleSubmit}
+          disabled={submitting}
           className="btn-primary w-full py-3 text-base disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {submitting ? (
