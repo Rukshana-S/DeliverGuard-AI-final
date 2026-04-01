@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -38,6 +38,13 @@ export default function Profile() {
   const [tab,    setTab]    = useState('overview');
   const [saved,  setSaved]  = useState('');
   const [error,  setError]  = useState('');
+  const [myRank, setMyRank] = useState(null);
+
+  useEffect(() => {
+    api.get('/leaderboard')
+      .then((r) => setMyRank(r.data.myRank))
+      .catch(() => {});
+  }, []);
 
   const [form, setForm] = useState({
     name: user?.name || '', phone: user?.phone || '', city: user?.city || '',
@@ -131,7 +138,7 @@ export default function Profile() {
               <Trophy size={14} className="text-amber-300" />
               <span className="text-xs font-bold text-amber-300 uppercase tracking-wide">{tier}</span>
             </div>
-            <p className="text-4xl font-extrabold leading-none">#{user?.rank || '—'}</p>
+            <p className="text-4xl font-extrabold leading-none">#{myRank?.rank ?? '—'}</p>
             <p className="text-xs text-white/60 mt-0.5">Rank</p>
           </div>
         </div>

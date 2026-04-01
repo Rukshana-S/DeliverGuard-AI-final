@@ -3,12 +3,17 @@ const jwt = require('jsonwebtoken');
 const generateToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-// Claim formula: hourly = weeklyIncome / 49 (7 days × 7 hrs), claim = 6 × hourly
-const calculateClaim = (weeklyIncome) => {
-  const income = Number(weeklyIncome);
+// Claim formula: hourly = avgDailyIncome / workingHoursPerDay, claim = hourly × 6
+const calculateClaim = (avgDailyIncome, workingHoursPerDay) => {
+  const income = Number(avgDailyIncome);
+  const hours  = Number(workingHoursPerDay) || 7;
   if (!income || income <= 0) return { hourlyIncome: 0, claimAmount: 0 };
-  const hourly = income / 49;
-  return { hourlyIncome: Math.round(hourly * 100) / 100, claimAmount: Math.round(6 * hourly) };
+  const DISRUPTION_HOURS = 6;
+  const hourly = income / hours;
+  return {
+    hourlyIncome: Math.round(hourly * 100) / 100,
+    claimAmount:  Math.round(hourly * DISRUPTION_HOURS),
+  };
 };
 
 const calcIncomeLoss = (avgDailyIncome, workingHours, severityFactor) => {

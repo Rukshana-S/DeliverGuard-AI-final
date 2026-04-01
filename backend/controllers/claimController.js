@@ -36,14 +36,17 @@ const createClaim = async (req, res, next) => {
         code: 'COVERAGE_INACTIVE',
       });
 
-    const weeklyIncome = Number(latestPayment.weeklyIncome) || Number(req.user.avgDailyIncome) * 7 || 0;
-    if (!weeklyIncome || weeklyIncome <= 0)
-      return res.status(400).json({ message: 'Invalid weekly income. Please upload salary proof first.' });
+    // Use user's actual daily income and working hours
+    const avgDailyIncome    = Number(req.user.avgDailyIncome) || 0;
+    const workingHoursPerDay = Number(req.user.workingHours)  || 7;
 
-    const { hourlyIncome, claimAmount } = calculateClaim(weeklyIncome);
+    if (!avgDailyIncome || avgDailyIncome <= 0)
+      return res.status(400).json({ message: 'Invalid daily income. Please update your profile first.' });
+
+    const { hourlyIncome, claimAmount } = calculateClaim(avgDailyIncome, workingHoursPerDay);
     const incomeLoss = claimAmount;
 
-    console.log(`[CLAIM] weeklyIncome=${weeklyIncome} hourly=${hourlyIncome} claimAmount=${claimAmount}`);
+    console.log({ avgDailyIncome, workingHoursPerDay, hourlyIncome, claimAmount });
 
     const claim = await Claim.create({
       userId: req.user._id,
