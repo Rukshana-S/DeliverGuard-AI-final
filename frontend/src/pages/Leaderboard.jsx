@@ -120,7 +120,7 @@ export default function Leaderboard() {
           <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-1.5">
             <Crown size={13} className="text-amber-400" /> Top Performers
           </p>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {top3.map((u, i) => {
               const s = TOP3[i];
               return (

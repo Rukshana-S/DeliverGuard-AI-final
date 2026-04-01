@@ -154,7 +154,7 @@ export default function Profile() {
       </motion.div>
 
       {/* ── Stats Row ── */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-3">
         {STATS.map(({ label, value, Icon, color, bg }, i) => (
           <motion.div
             key={label}
