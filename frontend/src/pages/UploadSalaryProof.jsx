@@ -88,16 +88,19 @@ export default function UploadSalaryProof() {
   return (
     <div className="max-w-lg mx-auto space-y-6">
 
-      {/* Header */}
-      <div>
-        <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Upload Weekly Income Proof</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Upload a screenshot showing your salary credited to your bank account for last week.
-        </p>
-      </div>
+      {/* Header — hidden on payment/success full-screen steps */}
+      {step !== 'payment' && step !== 'success' && (
+        <div>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">Upload Weekly Income Proof</h2>
+          <p className="text-sm text-gray-500 mt-1">
+            Upload a screenshot showing your salary credited to your bank account for last week.
+          </p>
+        </div>
+      )}
 
-      {/* Step indicator */}
-      <div className="flex items-center gap-2">
+      {/* Step indicator — hidden on payment/success */}
+      {step !== 'payment' && step !== 'success' && (
+        <div className="flex items-center gap-2">
         {[
           { key: 'upload',   label: 'Upload',  icon: '📤' },
           { key: 'scanning', label: 'Reading', icon: '🤖' },
@@ -127,7 +130,8 @@ export default function UploadSalaryProof() {
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
 
       <AnimatePresence mode="wait">
 
@@ -408,52 +412,147 @@ export default function UploadSalaryProof() {
         {/* ── STEP 5: Success ── */}
         {step === 'success' && paymentRecord && (
           <motion.div key="success"
-            initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-            className="card text-center space-y-5 py-8">
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 flex items-center justify-center px-4 py-8 overflow-y-auto"
+            style={{ background: 'linear-gradient(160deg, #0B1220 0%, #0F172A 100%)' }}
+          >
             <motion.div
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: 'spring', stiffness: 200, damping: 15 }}
-              className="text-6xl"
+              initial={{ scale: 0.9, opacity: 0, y: 30 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 22 }}
+              className="w-full max-w-sm rounded-2xl overflow-hidden"
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                boxShadow: '0 0 60px rgba(79,70,229,0.15), 0 20px 60px rgba(0,0,0,0.5)',
+              }}
             >
-              ✅
-            </motion.div>
-            <div>
-              <p className="text-xl font-extrabold text-gray-900 dark:text-white">Payment Successful!</p>
-              <p className="text-sm text-gray-500 mt-1">Your coverage is now active for 7 days.</p>
-            </div>
+              {/* Top glow accent */}
+              <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg, #4F46E5, #7C3AED, #4F46E5)' }} />
 
-            <div className="bg-green-50 dark:bg-green-900/20 rounded-2xl p-4 text-left space-y-2">
-              {[
-                { label: 'Transaction ID', value: paymentRecord.transactionId },
-                { label: 'Plan',           value: PLAN_LABELS[paymentRecord.planName] ?? paymentRecord.planName },
-                { label: 'Premium Paid',   value: fmt(paymentRecord.premiumAmount) },
-                { label: 'Coverage Start', value: fmtDate(paymentRecord.coverageStart) },
-                { label: 'Coverage Until', value: fmtDate(paymentRecord.coverageEnd) },
-                { label: 'Grace Deadline', value: fmtDate(paymentRecord.graceDeadline) },
-              ].map(({ label, value }) => (
-                <div key={label} className="flex justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">{label}</span>
-                  <span className="font-medium text-gray-800 dark:text-gray-100">{value}</span>
+              <div className="px-6 py-7 space-y-6">
+
+                {/* Header */}
+                <div className="text-center space-y-2">
+                  <motion.div
+                    initial={{ scale: 0, rotate: -10 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ type: 'spring', stiffness: 260, damping: 18, delay: 0.1 }}
+                    className="w-14 h-14 rounded-full mx-auto flex items-center justify-center mb-3"
+                    style={{ background: 'linear-gradient(135deg, #4F46E5, #7C3AED)', boxShadow: '0 0 24px rgba(124,58,237,0.5)' }}
+                  >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                      <path d="M5 13l4 4L19 7" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </motion.div>
+                  <h1 className="text-2xl font-extrabold text-white">
+                    {fmt(paymentRecord.premiumAmount)} Premium Paid
+                  </h1>
+                  <p className="text-sm" style={{ color: '#94A3B8' }}>
+                    Your insurance coverage is now active for 7 days
+                  </p>
                 </div>
-              ))}
-            </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => navigate('/insurance-payment-history')}
-                className="flex-1 py-3 rounded-2xl font-semibold border border-gray-200 dark:border-gray-700
-                  text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              >
-                View History
-              </button>
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="flex-1 py-3 rounded-2xl font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors"
-              >
-                Go to Dashboard
-              </button>
-            </div>
+                {/* Receipt card */}
+                <div className="rounded-xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                  <div className="px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+                    <p className="text-xs font-semibold tracking-widest uppercase" style={{ color: '#64748B' }}>
+                      Transaction Receipt
+                    </p>
+                  </div>
+                  <div className="divide-y" style={{ '--tw-divide-opacity': 1 }}>
+                    {[
+                      { label: 'Transaction ID', value: paymentRecord.transactionId, mono: true },
+                      { label: 'Date',           value: fmtDate(paymentRecord.paymentDate || paymentRecord.coverageStart) },
+                      { label: 'Time',           value: new Date(paymentRecord.paymentDate || paymentRecord.coverageStart).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) },
+                      { label: 'Premium Paid',   value: fmt(paymentRecord.premiumAmount), highlight: true },
+                      { label: 'Plan',           value: PLAN_LABELS[paymentRecord.planName] ?? paymentRecord.planName },
+                      { label: 'Coverage Start', value: fmtDate(paymentRecord.coverageStart) },
+                      { label: 'Coverage Until', value: fmtDate(paymentRecord.coverageEnd) },
+                      { label: 'Payment Method', value: 'IMPS Transfer' },
+                      { label: 'Status',         value: 'SUCCESS', success: true },
+                    ].map(({ label, value, mono, highlight, success }) => (
+                      <div key={label} className="flex items-center justify-between px-4 py-2.5"
+                        style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+                        <span className="text-xs" style={{ color: '#94A3B8' }}>{label}</span>
+                        <span className={`text-xs font-semibold ${
+                          success   ? 'text-green-400' :
+                          highlight ? 'text-white text-sm font-bold' :
+                          mono      ? 'font-mono' : ''
+                        }`}
+                          style={{ color: success ? '#22C55E' : highlight ? '#FFFFFF' : '#E2E8F0' }}
+                        >
+                          {value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Buttons */}
+                <div className="space-y-2.5">
+                  {/* Download */}
+                  <motion.button
+                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                    onClick={() => {
+                      const lines = [
+                        'DELIVERGUARD AI — PAYMENT RECEIPT',
+                        '===================================',
+                        `Transaction ID : ${paymentRecord.transactionId}`,
+                        `Date           : ${fmtDate(paymentRecord.coverageStart)}`,
+                        `Premium Paid   : ${fmt(paymentRecord.premiumAmount)}`,
+                        `Plan           : ${PLAN_LABELS[paymentRecord.planName] ?? paymentRecord.planName}`,
+                        `Coverage Start : ${fmtDate(paymentRecord.coverageStart)}`,
+                        `Coverage Until : ${fmtDate(paymentRecord.coverageEnd)}`,
+                        `Payment Method : IMPS Transfer`,
+                        `Status         : SUCCESS`,
+                        '===================================',
+                      ].join('\n');
+                      const blob = new Blob([lines], { type: 'text/plain' });
+                      const url  = URL.createObjectURL(blob);
+                      const a    = document.createElement('a');
+                      a.href = url; a.download = `receipt-${paymentRecord.transactionId}.txt`; a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                    className="w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all"
+                    style={{ border: '1px solid rgba(255,255,255,0.12)', color: '#E2E8F0', background: 'rgba(255,255,255,0.04)' }}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                    </svg>
+                    Download Receipt
+                  </motion.button>
+
+                  {/* View History */}
+                  <motion.button
+                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                    onClick={() => navigate('/insurance-payment-history')}
+                    className="w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all"
+                    style={{ border: '1px solid rgba(255,255,255,0.12)', color: '#E2E8F0', background: 'rgba(255,255,255,0.04)' }}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    View Payment History
+                  </motion.button>
+
+                  {/* Dashboard */}
+                  <motion.button
+                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                    onClick={() => navigate('/dashboard')}
+                    className="w-full py-3 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all"
+                    style={{ background: 'linear-gradient(135deg, #4F46E5, #7C3AED)', boxShadow: '0 4px 20px rgba(124,58,237,0.35)' }}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
+                      <rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
+                    </svg>
+                    Return to Dashboard
+                  </motion.button>
+                </div>
+
+              </div>
+            </motion.div>
           </motion.div>
         )}
 
