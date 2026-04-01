@@ -300,12 +300,12 @@ export default function UploadSalaryProof() {
               </button>
               <button
                 onClick={handlePay}
-                disabled={paying || !weeklyIncome || Number(weeklyIncome) <= 0 || !policy}
+                disabled={!weeklyIncome || Number(weeklyIncome) <= 0 || !policy}
                 className="flex-1 py-3 rounded-2xl font-semibold text-white bg-blue-600 hover:bg-blue-700
                   disabled:bg-gray-200 dark:disabled:bg-gray-700 disabled:text-gray-400
                   disabled:cursor-not-allowed transition-colors"
               >
-                {paying ? 'Processing…' : `Pay ${fmt(premium)}`}
+                {`Pay ${fmt(premium)}`}
               </button>
             </div>
           </motion.div>
