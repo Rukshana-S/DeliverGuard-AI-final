@@ -38,7 +38,13 @@ const extractIncome = async (req, res) => {
 
   } catch (error) {
     console.error("[OCR ERROR]:", error.message);
-    return res.json({ success: false, amount: null, weeklyIncome: null, message: "OCR unavailable" });
+    // Python OCR service not running (common on cloud deployments) — tell frontend to use manual input
+    return res.json({
+      success: false,
+      amount: null,
+      weeklyIncome: null,
+      message: 'Could not detect amount. Please enter your weekly income manually.',
+    });
   }
 };
 
