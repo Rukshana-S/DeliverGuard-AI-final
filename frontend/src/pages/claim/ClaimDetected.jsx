@@ -10,10 +10,8 @@ import { Lock, ShieldCheck, Clock, MapPin } from 'lucide-react';
 export default function ClaimDetected() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [coverage,   setCoverage]   = useState(null);
-  const [checking,   setChecking]   = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [error,      setError]      = useState('');
+  const [coverage, setCoverage] = useState(null);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     getCoverageStatus()
@@ -22,24 +20,19 @@ export default function ClaimDetected() {
       .finally(() => setChecking(false));
   }, []);
 
-  const handleSubmit = async () => {
-    setSubmitting(true);
-    setError('');
-    try {
-      const { data: claim } = await createClaim({
-        disruptionType:  'heavy_rain',
-        disruptionValue: 65,
-        location:        { city: user?.city || 'Unknown' },
-      });
-      navigate('/claim/status', { state: { claimId: claim._id } });
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to submit claim. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  // Auto-submit as soon as coverage is confirmed active
+  useEffect(() => {
+    if (!coverage?.active) return;
+    createClaim({
+      disruptionType:  'heavy_rain',
+      disruptionValue: 65,
+      location:        { city: user?.city || 'Unknown' },
+    })
+      .then(({ data: claim }) => navigate('/claim/status', { state: { claimId: claim._id }, replace: true }))
+      .catch(() =>             navigate('/claim/status', { state: { claimId: null },       replace: true }));
+  }, [coverage, navigate, user?.city]);
 
-  if (checking) return (
+  if (checking || coverage?.active) return (
     <div className="flex justify-center py-24">
       <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
     </div>
@@ -123,7 +116,7 @@ export default function ClaimDetected() {
         </div>
       </motion.div>
 
-      {/* Coverage active */}
+      {/* Coverage active — auto-processing */}
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -132,7 +125,7 @@ export default function ClaimDetected() {
       >
         <ShieldCheck size={20} className="text-green-600 shrink-0" />
         <div>
-          <p className="font-semibold text-green-700 dark:text-green-400 text-sm">Your income protection is active.</p>
+          <p className="font-semibold text-green-700 dark:text-green-400 text-sm">Coverage active — processing your claim automatically…</p>
           {coverage?.inGrace && (
             <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5 flex items-center gap-1">
               <Clock size={11} /> Grace period — pay premium soon.
@@ -140,30 +133,6 @@ export default function ClaimDetected() {
           )}
         </div>
       </motion.div>
-
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3 text-sm text-red-600 dark:text-red-400">
-          {error}
-        </div>
-      )}
-
-      <div className="flex flex-col gap-3">
-        <button
-          onClick={handleSubmit}
-          disabled={submitting}
-          className="btn-primary w-full py-3 text-base disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {submitting ? (
-            <span className="flex items-center justify-center gap-2">
-              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Submitting Claim…
-            </span>
-          ) : 'Submit Claim →'}
-        </button>
-        <button onClick={() => navigate('/dashboard')} className="btn-secondary w-full py-3 text-base">
-          Cancel
-        </button>
-      </div>
     </div>
   );
 }

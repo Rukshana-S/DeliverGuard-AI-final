@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import { formatCurrency, formatDate, getStatusBadge } from '../utils/helpers';
+import { Toast } from '../components/Toast';
 
 export default function AdminPolicies() {
   const [policies, setPolicies] = useState([]);
   const [loading,  setLoading]  = useState(true);
   const [premium,  setPremium]  = useState('all');
+  const [toast,    setToast]    = useState(null);
 
   const fetchPolicies = (prem = 'all') => {
     setLoading(true);
@@ -29,7 +31,8 @@ export default function AdminPolicies() {
       setPolicies((prev) => prev.map((p) =>
         p.userId?._id === userId ? { ...p, userId: { ...p.userId, isBlocked: true } } : p
       ));
-    } catch { alert('Failed to block user'); }
+      setToast({ message: 'User blocked successfully', type: 'success' });
+    } catch { setToast({ message: 'Failed to block user', type: 'error' }); }
   };
 
   const handleUnblock = async (userId) => {
@@ -38,11 +41,13 @@ export default function AdminPolicies() {
       setPolicies((prev) => prev.map((p) =>
         p.userId?._id === userId ? { ...p, userId: { ...p.userId, isBlocked: false } } : p
       ));
-    } catch { alert('Failed to unblock user'); }
+      setToast({ message: 'User unblocked successfully', type: 'success' });
+    } catch { setToast({ message: 'Failed to unblock user', type: 'error' }); }
   };
 
   return (
     <div className="space-y-4">
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       {/* Filter */}
       <div className="card flex items-center gap-3">
         <label className="text-sm text-gray-500 font-medium">Filter by Premium:</label>

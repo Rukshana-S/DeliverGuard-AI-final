@@ -14,7 +14,7 @@ const getTraffic = async (lat, lon) => {
     };
   } catch (err) {
     console.error('[TrafficService] Failed:', err.message);
-    return { currentSpeed: null, freeFlowSpeed: null, trafficRatio: null };
+    return { currentSpeed: null, freeFlowSpeed: null, trafficRatio: 1 };
   }
 };
 

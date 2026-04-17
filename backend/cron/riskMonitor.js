@@ -7,7 +7,7 @@ const RiskEvent = require('../models/RiskEvent');
 const { getWeather } = require('../services/weatherService');
 const { getAQI } = require('../services/aqiService');
 const { getTraffic } = require('../services/trafficService');
-const { analyzeRisk } = require('../services/riskEngine');
+const { analyzeRisk, getRiskScore } = require('../services/riskEngine');
 const { checkFraud } = require('../services/fraudService');
 const { calcIncomeLoss, getSeverityFactor } = require('../utils/helpers');
 const logger = require('../utils/logger');
@@ -56,6 +56,19 @@ const processZone = async (zone) => {
         const severityFactor = getSeverityFactor(disruption.type, disruption.value);
         const incomeLoss = calcIncomeLoss(worker.avgDailyIncome, worker.workingHours, severityFactor);
         const claimAmount = Math.min(incomeLoss, policy.coverageAmount);
+
+        // ML risk score for this worker
+        const policyTypeMap = { basic: 0, standard: 1, premium: 2 };
+        const userAgeDays = Math.floor((Date.now() - worker.createdAt) / (1000 * 60 * 60 * 24));
+        const historicalClaims = await Claim.countDocuments({ userId: worker._id });
+        const mlRisk = await getRiskScore(weather, aqi, traffic, {
+          historicalClaims,
+          avgDailyIncome: worker.avgDailyIncome || 500,
+          policyType: policyTypeMap[policy.planType] ?? 0,
+          userAgeDays,
+        });
+
+        logger.info(`[RISK ML] ${worker.name} score=${mlRisk.riskScore} severity=${mlRisk.severity} claimProb=${mlRisk.claimProbability}`);
 
         const claim = await Claim.create({
           userId: worker._id,

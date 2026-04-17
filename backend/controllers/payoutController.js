@@ -21,9 +21,9 @@ const initiatePayout = async (req, res, next) => {
     const claim = await Claim.findOne({ _id: claimId, userId: req.user._id });
     if (!claim) return res.status(404).json({ message: 'Claim not found' });
 
-    // Allow payout for any non-rejected status
-    if (claim.status === 'rejected')
-      return res.status(400).json({ message: 'Claim was rejected and is not eligible for payout' });
+    // Only allow payout for approved claims — do NOT auto-approve investigating/pending
+    if (!['approved', 'paid'].includes(claim.status))
+      return res.status(403).json({ message: claim.status === 'investigating' ? 'Claim is under fraud review. Please wait for admin approval.' : 'Claim is not yet approved for payout.' });
 
     // Prevent duplicate payout — but return existing payout data so frontend can use it
     const existing = await Payout.findOne({ claimId });
@@ -40,14 +40,7 @@ const initiatePayout = async (req, res, next) => {
 
     const bank = req.user.bankAccount;
 
-    // Auto-approve investigating/pending claims before payout
-    if (['investigating', 'pending'].includes(claim.status)) {
-      claim.status = 'approved';
-      await claim.save();
-    }
-
-    // Create pending payout record
-    console.log(`[PAYOUT] claimId=${claimId} claimAmount=${claim.claimAmount}`);
+    logger.info(`[PAYOUT] claimId=${claimId} claimAmount=${claim.claimAmount}`);
     const payout = await Payout.create({
       userId: req.user._id,
       claimId,
@@ -56,7 +49,7 @@ const initiatePayout = async (req, res, next) => {
       bankSnapshot: bank || {},
     });
 
-    // Simulate transfer
+    // Simulate IMPS transfer
     const transfer = await simulateTransfer(claim.claimAmount, bank);
 
     payout.paymentStatus = 'success';

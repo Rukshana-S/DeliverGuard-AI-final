@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePolicy } from '../context/PolicyContext';
 import { useNavigate } from 'react-router-dom';
+import { Toast } from '../components/Toast';
 import {
   CloudRain, Waves, Users, Building2, Wind,
   ClipboardList, ShieldCheck, Scale, Calculator,
@@ -97,6 +98,7 @@ function PolicyPage({ planKey, onClose }) {
   const [location, setLocation] = useState(false);
   const [busy,     setBusy]     = useState(false);
   const [done,     setDone]     = useState(false);
+  const [toast,    setToast]    = useState(null);
 
   const canActivate = terms && location && !busy;
 
@@ -108,7 +110,7 @@ function PolicyPage({ planKey, onClose }) {
       if (setPolicy) setPolicy(result);
       setDone(true);
     } catch {
-      alert('Activation failed. Please try again.');
+      setToast({ message: 'Activation failed. Please try again.', type: 'error' });
     } finally {
       setBusy(false);
     }
@@ -116,8 +118,7 @@ function PolicyPage({ planKey, onClose }) {
 
   if (done) {
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
+      <motion.div        initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         className="fixed inset-0 z-50 flex flex-col items-center justify-center
                    bg-white dark:bg-gray-950 px-6 text-center"
@@ -152,6 +153,7 @@ function PolicyPage({ planKey, onClose }) {
       exit={{ opacity: 0, y: 40 }} transition={{ duration: 0.22 }}
       className="fixed inset-0 z-50 flex flex-col bg-gray-50 dark:bg-gray-950"
     >
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       <header className="shrink-0 bg-white dark:bg-gray-900 border-b border-gray-100
                          dark:border-gray-800 px-5 md:px-8 py-4 flex items-center
                          justify-between shadow-sm z-10">

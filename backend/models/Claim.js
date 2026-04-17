@@ -21,6 +21,7 @@ const claimSchema = new mongoose.Schema({
     default: 'pending',
   },
   fraudScore: { type: Number, default: 0 },
+  mlScore:    { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now },
 }, { timestamps: true });
 

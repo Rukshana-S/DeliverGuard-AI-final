@@ -4,6 +4,8 @@ const { generateToken } = require('../utils/helpers');
 const register = async (req, res, next) => {
   try {
     const { name, email, phone, password, deliveryPlatform, city } = req.body;
+    if (!name || !email || !phone || !password)
+      return res.status(400).json({ message: 'Name, email, phone and password are required' });
     const exists = await User.findOne({ email });
     if (exists) return res.status(400).json({ message: 'Email already registered' });
 

@@ -3,17 +3,19 @@ const multer = require('multer');
 const { extractIncome } = require('../controllers/ocrController');
 const { protect } = require('../middleware/authMiddleware');
 
-// Memory storage (correct)
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-  fileFilter: (_, file, cb) => {
-    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
-    cb(null, allowed.includes(file.mimetype));
-  },
+  limits: { fileSize: 10 * 1024 * 1024 },
 });
 
-// Route
-router.post('/extract-income', protect, upload.single('image'), extractIncome);
+const handleUpload = (req, res, next) => {
+  upload.single('image')(req, res, (err) => {
+    if (err) return res.status(400).json({ message: err.message });
+    if (!req.file) return res.status(400).json({ message: 'No image uploaded. Make sure field name is "image".' });
+    next();
+  });
+};
+
+router.post('/extract-income', protect, handleUpload, extractIncome);
 
 module.exports = router;

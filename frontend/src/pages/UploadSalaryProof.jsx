@@ -44,29 +44,49 @@ export default function UploadSalaryProof() {
     handleFile(e.dataTransfer.files[0]);
   };
 
-  // Send image to backend → Gemini Vision extracts the ₹ amount
+  // Resize image on canvas before sending to reduce payload
+  const compressImage = (file) => new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const MAX = 1000;
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width  = img.width  * scale;
+      canvas.height = img.height * scale;
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      canvas.toBlob((blob) => resolve(new File([blob], file.name, { type: 'image/jpeg' })), 'image/jpeg', 0.85);
+    };
+    img.src = url;
+  });
+
+  // Send image to backend → OCR extracts the ₹ amount
   const runExtract = async () => {
     if (!file) return;
     setStep('scanning');
     setError('');
     try {
+      const compressed = await compressImage(file);
       const form = new FormData();
-      form.append('image', file);
+      form.append('image', compressed);
 
-      const { data } = await api.post('/ocr/extract-income', form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const { data } = await api.post('/ocr/extract-income', form);
 
-      // backend returns { amount, weeklyIncome } — use whichever is present
-      const detected = data.amount || data.weeklyIncome;
-      setWeeklyIncome(String(detected));
-      setManualMode(false);
+      if (data.success && (data.amount || data.weeklyIncome)) {
+        const detected = data.amount || data.weeklyIncome;
+        setWeeklyIncome(String(detected));
+        setManualMode(false);
+      } else {
+        // OCR worked but couldn't find amount — show manual input
+        setManualMode(true);
+        setError(data.message || 'Could not detect amount. Please enter it manually.');
+      }
     } catch (err) {
+      console.error('[OCR]', err.response?.status, err.response?.data);
+      // Any network/server error — just show manual input, never block the user
       setManualMode(true);
-      setError(
-        err.response?.data?.message ||
-        'Could not detect amount. Please enter it manually below.'
-      );
+      setError('Could not detect amount. Please enter it manually.');
     } finally {
       setStep('confirm');
     }

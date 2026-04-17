@@ -37,6 +37,8 @@ import UploadSalaryProof from './pages/UploadSalaryProof';
 import InsurancePaymentHistory from './pages/InsurancePaymentHistory';
 import LandingPage from './pages/LandingPage';
 import Leaderboard from './pages/Leaderboard';
+import MLTest from './pages/MLTest';
+import DistrictMonitor from './pages/DistrictMonitor';
 import Terms from './pages/Terms';
 
 const AUTH_PATHS = ['/login', '/register', '/onboarding', '/setup/', '/'];
@@ -135,6 +137,8 @@ function AppRoutes() {
         <Route path="/upload-salary-proof"       element={<ProtectedLayout title="Upload Salary Proof"><UploadSalaryProof /></ProtectedLayout>} />
         <Route path="/insurance-payment-history" element={<ProtectedLayout title="Payment History"><InsurancePaymentHistory /></ProtectedLayout>} />
         <Route path="/leaderboard"               element={<ProtectedLayout title="Leaderboard"><Leaderboard /></ProtectedLayout>} />
+        <Route path="/ml-test"                   element={<ProtectedLayout title="ML Testing"><MLTest /></ProtectedLayout>} />
+        <Route path="/districts"                 element={<ProtectedLayout title="District Monitor"><DistrictMonitor /></ProtectedLayout>} />
         <Route path="/terms"                     element={<ProtectedLayout title="Terms & Conditions"><Terms /></ProtectedLayout>} />
 
         {/* Admin */}

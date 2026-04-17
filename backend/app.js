@@ -14,6 +14,7 @@ const payoutRoutes = require('./routes/payoutRoutes');
 const premiumRoutes = require('./routes/premiumRoutes');
 const ocrRoutes = require('./routes/ocrRoutes');
 const leaderboardRoutes = require('./routes/leaderboardRoutes');
+const districtRoutes = require('./routes/districtRoutes');
 
 const app = express();
 
@@ -37,7 +38,16 @@ app.use(cors({
 
 app.use(express.json());
 
-// Rate limiter
+// Strict rate limiter for auth routes (brute force protection)
+const authLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many attempts. Please try again in a minute.' },
+});
+
+// General rate limiter
 const limiter = rateLimit({
   windowMs: 1 * 60 * 1000,
   max: 200,
@@ -48,7 +58,7 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // Routes
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api', policyRoutes);
 app.use('/api/claims', claimRoutes);
@@ -58,6 +68,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/payments', premiumRoutes);
 app.use('/api/ocr', ocrRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
+app.use('/api/districts', districtRoutes);
 
 // Error handler
 app.use(errorHandler);

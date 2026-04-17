@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import api from '../services/api';
 import { formatDate } from '../utils/helpers';
 import { motion } from 'framer-motion';
+import { Toast } from '../components/Toast';
 
 const STATUS_BADGE = (active) =>
   active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
@@ -12,6 +13,7 @@ export default function AdminUsers() {
   const [search,   setSearch]   = useState('');
   const [city,     setCity]     = useState('all');
   const [platform, setPlatform] = useState('all');
+  const [toast,    setToast]    = useState(null);
 
   const fetchUsers = () => {
     const params = {};
@@ -31,14 +33,16 @@ export default function AdminUsers() {
     try {
       await api.put(`/admin/block-user/${id}`);
       setUsers((prev) => prev.map((u) => u._id === id ? { ...u, isBlocked: true } : u));
-    } catch { alert('Failed to block user'); }
+      setToast({ message: 'User blocked successfully', type: 'success' });
+    } catch { setToast({ message: 'Failed to block user', type: 'error' }); }
   };
 
   const handleUnblock = async (id) => {
     try {
       await api.put(`/admin/unblock-user/${id}`);
       setUsers((prev) => prev.map((u) => u._id === id ? { ...u, isBlocked: false } : u));
-    } catch { alert('Failed to unblock user'); }
+      setToast({ message: 'User unblocked successfully', type: 'success' });
+    } catch { setToast({ message: 'Failed to unblock user', type: 'error' }); }
   };
 
   const cities    = ['all', 'Chennai', 'Coimbatore', 'Madurai', 'Salem', 'Tiruchirappalli', 'Tirunelveli'];
@@ -46,6 +50,7 @@ export default function AdminUsers() {
 
   return (
     <div className="space-y-4">
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       {/* Filters */}
       <div className="card flex flex-wrap gap-3">
         <input

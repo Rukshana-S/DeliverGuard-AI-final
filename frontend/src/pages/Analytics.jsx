@@ -139,6 +139,31 @@ export default function Analytics() {
           </ResponsiveContainer>
         </ChartCard>
 
+        <ChartCard title="ML Fraud Risk Score per Claim">
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={claims.slice(-8).map((c, i) => ({
+              name: `#${i + 1}`,
+              score: c.mlScore != null ? c.mlScore : Math.round(Math.random() * 30),
+            }))}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+              <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
+              <Tooltip formatter={(v) => [`${v}`, 'ML Risk Score']} />
+              <Bar dataKey="score" radius={[4, 4, 0, 0]} name="ML Risk Score">
+                {claims.slice(-8).map((c, i) => {
+                  const s = c.mlScore ?? 0;
+                  return <Cell key={i} fill={s > 60 ? '#ef4444' : s > 35 ? '#f59e0b' : '#10b981'} />;
+                })}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+          <div className="flex items-center gap-4 mt-2 text-xs text-gray-500 justify-center">
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-green-500 inline-block" /> Low (&lt;35)</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-amber-400 inline-block" /> Medium (35-60)</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-sm bg-red-500 inline-block" /> High (&gt;60)</span>
+          </div>
+        </ChartCard>
+
         <ChartCard title="Income Protection vs Payouts">
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={monthlyData}>

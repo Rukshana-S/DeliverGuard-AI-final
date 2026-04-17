@@ -3,6 +3,7 @@ const Policy = require('../models/Policy');
 const InsurancePayment = require('../models/InsurancePayment');
 const { checkFraud } = require('../services/fraudService');
 const { calculateClaim } = require('../utils/helpers');
+const logger = require('../utils/logger');
 
 const getClaims = async (req, res, next) => {
   try {
@@ -29,7 +30,7 @@ const createClaim = async (req, res, next) => {
     const now = new Date();
     const latestPayment = await InsurancePayment.findOne({ userId: req.user._id, paymentStatus: 'success' })
       .sort({ coverageStart: -1 });
-    const coverageActive = latestPayment && now <= latestPayment.graceDeadline;
+    const coverageActive = latestPayment && latestPayment.graceDeadline && now <= new Date(latestPayment.graceDeadline);
     if (!coverageActive)
       return res.status(403).json({
         message: 'Your insurance coverage is inactive. Please pay the weekly premium to continue protection.',
@@ -43,10 +44,10 @@ const createClaim = async (req, res, next) => {
     if (!avgDailyIncome || avgDailyIncome <= 0)
       return res.status(400).json({ message: 'Invalid daily income. Please update your profile first.' });
 
-    const { hourlyIncome, claimAmount } = calculateClaim(avgDailyIncome, workingHoursPerDay);
+    const { hourlyIncome, claimAmount } = calculateClaim(avgDailyIncome, workingHoursPerDay, policy.maxWeeklyPayout);
     const incomeLoss = claimAmount;
 
-    console.log({ avgDailyIncome, workingHoursPerDay, hourlyIncome, claimAmount });
+    logger.info(`[CLAIM] income=${avgDailyIncome} hours=${workingHoursPerDay} hourly=${hourlyIncome} claim=${claimAmount}`);
 
     const claim = await Claim.create({
       userId: req.user._id,
@@ -58,8 +59,9 @@ const createClaim = async (req, res, next) => {
       status: 'pending',
     });
 
-    const { isSuspicious } = await checkFraud(req.user._id, claim);
-    claim.status = isSuspicious ? 'investigating' : 'approved';
+    const { isSuspicious, mlScore } = await checkFraud(req.user._id, claim);
+    claim.status  = isSuspicious ? 'investigating' : 'approved';
+    claim.mlScore = mlScore ?? 0;
     await claim.save();
 
     res.status(201).json({ ...claim.toObject(), hourlyIncome: Math.round(hourlyIncome) });

@@ -20,24 +20,23 @@ NOISE_PATTERNS = [
 def is_noise(text):
     return any(p.search(text) for p in NOISE_PATTERNS)
 
-def crop_center(img: Image.Image) -> Image.Image:
-    """Crop vertical center 50% (25%–75%) — UPI amount always in the middle."""
-    w, h = img.size
-    top    = int(h * 0.25)
-    bottom = int(h * 0.75)
-    return img.crop((0, top, w, bottom))
+OCR_FIX = str.maketrans('rRuUlLoOsSgGqQiIzZ', '330011005566009911')
+
+def fix_ocr(text: str) -> str:
+    """Fix common OCR misreads in numeric strings."""
+    return text.translate(OCR_FIX)
 
 def parse_amount(text: str):
     """Return numeric value if text is a clean payment amount, else None."""
-    clean = re.sub(r'[₹₨]|Rs\.?|INR', '', text, flags=re.I).strip()
-    clean = clean.replace(',', '').strip()
+    clean = re.sub(r'^[₹₨RrBb8&]|Rs\.?|INR', '', text, flags=re.I).strip()
+    clean = fix_ocr(clean).replace(',', '').strip()
 
     m = re.fullmatch(r'(\d+(?:\.\d{1,2})?)', clean)
     if not m:
         return None
 
     val = round(float(m.group(1)))
-    return val if 1 <= val <= 99999 else None
+    return val if 10 <= val <= 99999 else None
 
 
 def extract_amount(texts: list):
@@ -55,17 +54,25 @@ def extract_amount(texts: list):
                 val = parse_amount(candidate)
                 if val is not None:
                     return val
-            return None  # status found but no valid number above
+            break  # status found, fall through to secondary
 
     # SECONDARY: ₹-prefixed number
     joined = ' '.join(texts)
     m = re.search(r'[₹₨]\s*(\d[\d,]*(?:\.\d{1,2})?)', joined)
     if m:
         val = round(float(m.group(1).replace(',', '')))
-        if 1 <= val <= 99999:
+        if 10 <= val <= 99999:
             return val
 
-    return None
+    # TERTIARY: scan every text with OCR fix, pick largest valid amount
+    candidates = []
+    for t in texts:
+        if is_noise(t):
+            continue
+        val = parse_amount(t)
+        if val is not None:
+            candidates.append(val)
+    return max(candidates) if candidates else None
 
 
 @app.route('/', methods=['GET'])
@@ -85,18 +92,17 @@ def extract():
 
     file  = request.files['image']
     img   = Image.open(io.BytesIO(file.read())).convert('RGB')
-    img   = crop_center(img)                          # crop to center 50%
     arr   = np.array(img)
 
     # paragraph=False keeps each text box separate — prevents digit merging
     # max(candidates) in extract_amount picks 120 over stray 2
     results = reader.readtext(arr, detail=0, paragraph=False)
-    app.logger.info(f'[OCR] texts: {results}')
+    print(f'[OCR TEXTS]: {results}', flush=True)
 
     amount = extract_amount(results)
-    app.logger.info(f'[OCR] amount: {amount}')
+    print(f'[OCR AMOUNT]: {amount}', flush=True)
 
-    return jsonify({'amount': amount})
+    return jsonify({'amount': amount, 'debug_texts': results})
 
 
 if __name__ == '__main__':

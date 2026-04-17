@@ -4,15 +4,18 @@ const generateToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
 // Claim formula: hourly = avgDailyIncome / workingHoursPerDay, claim = hourly × 6
-const calculateClaim = (avgDailyIncome, workingHoursPerDay) => {
+const logger = require('../utils/logger');
+
+const calculateClaim = (avgDailyIncome, workingHoursPerDay, maxWeeklyPayout) => {
   const income = Number(avgDailyIncome);
-  const hours  = Number(workingHoursPerDay) || 7;
+  const hours  = Number(workingHoursPerDay) || 8;
   if (!income || income <= 0) return { hourlyIncome: 0, claimAmount: 0 };
   const DISRUPTION_HOURS = 6;
   const hourly = income / hours;
+  const raw    = Math.round(hourly * DISRUPTION_HOURS);
   return {
     hourlyIncome: Math.round(hourly * 100) / 100,
-    claimAmount:  Math.round(hourly * DISRUPTION_HOURS),
+    claimAmount:  maxWeeklyPayout ? Math.min(raw, maxWeeklyPayout) : raw,
   };
 };
 

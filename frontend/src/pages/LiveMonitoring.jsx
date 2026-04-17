@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getLiveData } from '../services/monitoringService';
+import { createClaim } from '../services/claimService';
 import MapComponent from '../components/MapComponent';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
@@ -11,16 +12,26 @@ import {
 } from 'lucide-react';
 
 const CITY_COORDS = {
-  Chennai: [13.0827, 80.2707], Coimbatore: [11.0168, 76.9558], Madurai: [9.9252, 78.1198],
-  Tiruchirappalli: [10.7905, 78.7047], Salem: [11.6643, 78.1460], Erode: [11.3410, 77.7172],
-  Tiruppur: [11.1085, 77.3411], Vellore: [12.9165, 79.1325], Thanjavur: [10.7870, 79.1378],
-  Dindigul: [10.3673, 77.9803], Karur: [10.9601, 78.0766], Namakkal: [11.2194, 78.1674],
-  Cuddalore: [11.7447, 79.7680], Nagapattinam: [10.7656, 79.8428], Tiruvarur: [10.7749, 79.6350],
-  Villupuram: [11.9401, 79.4861], Kanchipuram: [12.8342, 79.7036], Tiruvallur: [13.1440, 79.9080],
-  Krishnagiri: [12.5266, 78.2140], Dharmapuri: [12.1211, 78.1582], Perambalur: [11.2342, 78.8836],
-  Ariyalur: [11.1398, 79.0756], Pudukkottai: [10.3797, 78.8208], Ramanathapuram: [9.3639, 78.8391],
-  Sivaganga: [9.8433, 78.4809], Virudhunagar: [9.5680, 77.9624], Theni: [10.0104, 77.4768],
-  Tirunelveli: [8.7139, 77.7567], Thoothukudi: [8.7642, 78.1348], Kanyakumari: [8.0883, 77.5385],
+  // Districts
+  Ariyalur: [11.1401, 79.0786], Chengalpattu: [12.6819, 79.9888], Chennai: [13.0827, 80.2707],
+  Coimbatore: [11.0168, 76.9558], Cuddalore: [11.7447, 79.7680], Dharmapuri: [12.1277, 78.1579],
+  Dindigul: [10.3673, 77.9803], Erode: [11.3410, 77.7172], Kallakurichi: [11.7401, 78.9590],
+  Kanchipuram: [12.8342, 79.7036], Kanyakumari: [8.0883, 77.5385], Karur: [10.9601, 78.0766],
+  Krishnagiri: [12.5186, 78.2137], Madurai: [9.9252, 78.1198], Mayiladuthurai: [11.1035, 79.6550],
+  Nagapattinam: [10.7656, 79.8428], Namakkal: [11.2194, 78.1674], Nilgiris: [11.4916, 76.7337],
+  Perambalur: [11.2342, 78.8832], Pudukkottai: [10.3833, 78.8000], Ramanathapuram: [9.3639, 78.8397],
+  Ranipet: [12.9273, 79.3333], Salem: [11.6643, 78.1460], Sivaganga: [9.8476, 78.4800],
+  Tenkasi: [8.9596, 77.3152], Thanjavur: [10.7867, 79.1378], Theni: [10.0104, 77.4768],
+  Thoothukudi: [8.7642, 78.1348], Tiruchirappalli: [10.7905, 78.7047], Tirunelveli: [8.7139, 77.7567],
+  Tirupathur: [12.4952, 78.5670], Tiruppur: [11.1085, 77.3411], Tiruvallur: [13.1394, 79.9089],
+  Tiruvannamalai: [12.2253, 79.0747], Tiruvarur: [10.7720, 79.6368], Vellore: [12.9165, 79.1325],
+  Viluppuram: [11.9390, 79.4924], Virudhunagar: [9.5680, 77.9624],
+  // Hill Stations
+  Ooty: [11.4064, 76.6932], Coonoor: [11.3530, 76.7959], Kotagiri: [11.4204, 76.8600],
+  Kodaikanal: [10.2381, 77.4892], Yercaud: [11.7794, 78.2090], Valparai: [10.3269, 76.9510],
+  'Kolli Hills': [11.2483, 78.3410], 'Kalrayan Hills': [11.6300, 78.8000], Sirumalai: [10.1500, 77.9500],
+  Yelagiri: [12.5736, 78.6390], Meghamalai: [9.6847, 77.2470], Manjolai: [8.7150, 77.4000],
+  // Other cities
   Mumbai: [19.076, 72.877], Delhi: [28.613, 77.209], Bangalore: [12.971, 77.594],
   Hyderabad: [17.385, 78.486], Pune: [18.520, 73.856],
 };
@@ -38,8 +49,9 @@ export default function LiveMonitoring() {
   const [loading,     setLoading]     = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [logs,        setLogs]        = useState([]);
-  const [simulated,   setSimulated]   = useState(true);
+  const [simulated,   setSimulated]   = useState(false);
   const [coords,      setCoords]      = useState([13.0827, 80.2707]);
+  const [filing,      setFiling]      = useState(false);
 
   useEffect(() => {
     if (user?.city) setCoords(getCityCoords(user.city));
@@ -51,13 +63,14 @@ export default function LiveMonitoring() {
   };
 
   const fetchData = useCallback(async () => {
+    setSimulated(false);
     try {
       const res = await getLiveData(coords[0], coords[1]);
       setData(res.data);
       setLastUpdated(new Date().toLocaleTimeString());
       const city = user?.city || 'your city';
       addLog(`Live data refreshed for ${city}`, 'success');
-      if (res.data?.weather) addLog(`Rain: ${res.data.weather.rain}mm | Temp: ${res.data.weather.temp}°C`, 'info');
+      if (res.data?.weather) addLog(`Rain: ${res.data.weather.rain}mm | Temp: ${res.data.weather.temp}°C [${res.data.weather.source || 'api'}]`, 'info');
       if (res.data?.aqi)     addLog(`AQI: ${res.data.aqi.aqi} — ${city}`, 'info');
       if (res.data?.traffic) addLog(`Traffic ratio: ${res.data.traffic.trafficRatio?.toFixed(2)}`, 'info');
     } catch {
@@ -78,11 +91,42 @@ export default function LiveMonitoring() {
     addLog('Disruption simulated: Heavy Rain 65mm — HIGH RISK', 'alert');
   };
 
-  const weather   = data?.weather;
-  const aqi       = data?.aqi;
-  const traffic   = data?.traffic;
-  const rainVal   = simulated ? 65 : (weather?.rain ?? 0);
-  const rainAlert = simulated || rainVal > 50;
+  const handleEligibleClick = async () => {
+    setFiling(true);
+    try {
+      const { data: claim } = await createClaim({
+        disruptionType:  'heavy_rain',
+        disruptionValue: simulated ? 65 : rainVal,
+        location:        { city: user?.city || 'Unknown' },
+      });
+      navigate('/claim/status', { state: { claimId: claim._id } });
+    } catch {
+      navigate('/claim/status', { state: { claimId: null } });
+    } finally {
+      setFiling(false);
+    }
+  };
+
+  const weather      = data?.weather;
+  const aqi          = data?.aqi;
+  const traffic      = data?.traffic;
+  const rainVal      = simulated ? 65 : (weather?.rain ?? 0);
+  const aqiVal       = aqi?.aqi ?? 0;
+  const trafficRatio = traffic?.trafficRatio ?? 1;
+
+  // Use disruptions array from API when not simulated
+  const apiDisruptions = data?.disruptions ?? [];
+  const rainAlert    = simulated || apiDisruptions.some(d => d.type === 'heavy_rain');
+  const aqiAlert     = !simulated && apiDisruptions.some(d => d.type === 'aqi_hazard');
+  const trafficAlert = !simulated && apiDisruptions.some(d => d.type === 'traffic_jam');
+  const heatAlert    = !simulated && apiDisruptions.some(d => d.type === 'extreme_heat');
+  const anyAlert     = rainAlert || aqiAlert || trafficAlert || heatAlert;
+
+  const activeDisruptions = [];
+  if (rainAlert)    activeDisruptions.push({ label: 'Heavy Rain Detected',  value: `${rainVal} mm`,                    type: 'heavy_rain',   risk: 'HIGH RISK' });
+  if (aqiAlert)     activeDisruptions.push({ label: 'Hazardous AQI Level',  value: `AQI ${aqiVal}`,                    type: 'aqi_hazard',   risk: 'HIGH RISK' });
+  if (trafficAlert) activeDisruptions.push({ label: 'Severe Traffic Jam',   value: `Ratio ${trafficRatio.toFixed(2)}`, type: 'traffic_jam',  risk: 'HIGH RISK' });
+  if (heatAlert)    activeDisruptions.push({ label: 'Extreme Heat',         value: `${weather?.temp}°C`,               type: 'extreme_heat', risk: 'HIGH RISK' });
 
   return (
     <div className="space-y-5">
@@ -100,14 +144,21 @@ export default function LiveMonitoring() {
             </p>
           )}
         </div>
-        <button onClick={fetchData} className="btn-secondary text-sm flex items-center gap-2">
-          <RefreshCw size={14} /> Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          {simulated && (
+            <button onClick={() => setSimulated(false)} className="btn-secondary text-sm flex items-center gap-2 border-orange-400 text-orange-600 hover:bg-orange-50">
+              ✕ Reset Simulation
+            </button>
+          )}
+          <button onClick={fetchData} className="btn-secondary text-sm flex items-center gap-2">
+            <RefreshCw size={14} /> Refresh
+          </button>
+        </div>
       </div>
 
-      {/* ── Top Alert Banner (always visible when simulated) ── */}
+      {/* ── Top Alert Banner ── */}
       <AnimatePresence>
-        {rainAlert && (
+        {anyAlert && (
           <motion.div
             initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -118,7 +169,7 @@ export default function LiveMonitoring() {
             <AlertTriangle size={22} className="text-red-600 shrink-0 mt-0.5" />
             <div>
               <p className="font-bold text-red-700 text-sm">
-                ⚠️ Active Disruption Detected: Heavy Rain
+                ⚠️ Active Disruption Detected: {activeDisruptions.map(d => d.label).join(', ')}
               </p>
               <p className="text-xs text-red-600 mt-0.5 font-medium">
                 ✅ You are eligible for compensation
@@ -138,7 +189,7 @@ export default function LiveMonitoring() {
       ) : (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 
-          {/* Rainfall — dominant alert card */}
+          {/* Rainfall */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -162,10 +213,19 @@ export default function LiveMonitoring() {
               <p className={`text-2xl font-bold ${rainAlert ? 'text-red-600' : 'text-gray-800 dark:text-gray-100'}`}>
                 {rainVal} mm
               </p>
-              {rainAlert
-                ? <p className="text-xs font-semibold text-red-600 mt-0.5">⚠️ Heavy Rain Detected</p>
-                : <p className="text-xs text-gray-400">Normal</p>
-              }
+              {rainAlert ? (
+                <p className="text-xs font-semibold text-red-600 mt-0.5">⚠️ Heavy Rain Detected</p>
+              ) : (
+                <div className="mt-0.5 space-y-0.5">
+                  <p className="text-xs text-gray-500 capitalize">{weather?.description || 'No rain'}</p>
+                  {weather?.rainChance > 0 && (
+                    <p className="text-xs text-blue-500">{weather.rainChance}% chance now</p>
+                  )}
+                  {weather?.dailyRain > 0 && (
+                    <p className="text-xs text-gray-400">Today: {weather.dailyRain} mm total</p>
+                  )}
+                </div>
+              )}
             </div>
           </motion.div>
 
@@ -174,7 +234,7 @@ export default function LiveMonitoring() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            className="card flex items-center gap-4 opacity-80"
+            className="card flex items-center gap-4"
           >
             <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-orange-50 dark:bg-orange-900/20 text-orange-500">
               <Thermometer size={22} />
@@ -195,18 +255,28 @@ export default function LiveMonitoring() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="card flex items-center gap-4 opacity-80"
+            className="card relative flex items-center gap-4"
+            style={aqiAlert ? {
+              border: '2px solid #EF4444',
+              backgroundColor: '#FEF2F2',
+              boxShadow: '0 0 0 4px rgba(239,68,68,0.12)',
+            } : {}}
           >
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-green-50 dark:bg-green-900/20 text-green-600">
+            {aqiAlert && (
+              <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+            )}
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+              aqiAlert ? 'bg-red-100 text-red-600' : 'bg-green-50 dark:bg-green-900/20 text-green-600'
+            }`}>
               <Wind size={22} />
             </div>
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">AQI Level</p>
-              <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-                {aqi ? aqi.aqi : 'N/A'}
+              <p className={`text-2xl font-bold ${aqiAlert ? 'text-red-600' : 'text-gray-800 dark:text-gray-100'}`}>
+                {aqi ? aqiVal : 'N/A'}
               </p>
-              <p className="text-xs text-gray-400">
-                {aqi?.aqi > 300 ? 'Hazardous' : aqi?.aqi > 150 ? 'Unhealthy' : 'Good'}
+              <p className={`text-xs mt-0.5 ${aqiAlert ? 'text-red-600 font-semibold' : 'text-gray-400'}`}>
+                {aqiAlert ? '⚠️ Hazardous' : aqiVal > 150 ? 'Unhealthy' : 'Good'}
               </p>
             </div>
           </motion.div>
@@ -216,18 +286,28 @@ export default function LiveMonitoring() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-            className="card flex items-center gap-4 opacity-80"
+            className="card relative flex items-center gap-4"
+            style={trafficAlert ? {
+              border: '2px solid #EF4444',
+              backgroundColor: '#FEF2F2',
+              boxShadow: '0 0 0 4px rgba(239,68,68,0.12)',
+            } : {}}
           >
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-purple-50 dark:bg-purple-900/20 text-purple-600">
+            {trafficAlert && (
+              <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+            )}
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+              trafficAlert ? 'bg-red-100 text-red-600' : 'bg-purple-50 dark:bg-purple-900/20 text-purple-600'
+            }`}>
               <TrafficCone size={22} />
             </div>
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Traffic Ratio</p>
-              <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-                {traffic ? traffic.trafficRatio?.toFixed(2) : 'N/A'}
+              <p className={`text-2xl font-bold ${trafficAlert ? 'text-red-600' : 'text-gray-800 dark:text-gray-100'}`}>
+                {traffic ? trafficRatio.toFixed(2) : 'N/A'}
               </p>
-              <p className="text-xs text-gray-400">
-                {traffic?.trafficRatio < 0.4 ? 'Severe jam' : 'Normal flow'}
+              <p className={`text-xs mt-0.5 ${trafficAlert ? 'text-red-600 font-semibold' : 'text-gray-400'}`}>
+                {trafficAlert ? '⚠️ Severe Jam' : trafficRatio < 0.7 ? 'Slow flow' : 'Normal flow'}
               </p>
             </div>
           </motion.div>
@@ -236,7 +316,7 @@ export default function LiveMonitoring() {
 
       {/* ── Active Disruption Alerts section ── */}
       <AnimatePresence>
-        {rainAlert && (
+        {anyAlert && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -246,27 +326,30 @@ export default function LiveMonitoring() {
             <p className="text-sm font-bold text-red-600 flex items-center gap-1.5">
               <AlertTriangle size={15} /> Active Disruption Alerts
             </p>
-            <div
-              className="flex items-center justify-between rounded-xl px-4 py-3 border-l-4 border-red-500"
-              style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderLeft: '4px solid #EF4444' }}
-            >
-              <div>
-                <p className="font-bold text-red-700 text-sm">Heavy Rain Detected</p>
-                <p className="text-xs text-gray-500 mt-0.5">Value: 65</p>
+            {activeDisruptions.map((d) => (
+              <div
+                key={d.type}
+                className="flex items-center justify-between rounded-xl px-4 py-3"
+                style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderLeft: '4px solid #EF4444' }}
+              >
+                <div>
+                  <p className="font-bold text-red-700 text-sm">{d.label}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Value: {d.value}</p>
+                </div>
+                <span className="text-xs font-bold px-3 py-1 rounded-full text-white bg-red-500">
+                  {d.risk}
+                </span>
               </div>
-              <span className="text-xs font-bold px-3 py-1 rounded-full text-white bg-red-500">
-                HIGH RISK
-              </span>
-            </div>
+            ))}
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* ── Bottom Action Banner ── */}
-      <AnimatePresence>
-        {rainAlert ? (
-          /* Confirmed disruption — file claim banner */
+      <AnimatePresence mode="wait">
+        {anyAlert ? (
           <motion.div
+            key="claim"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
@@ -283,15 +366,21 @@ export default function LiveMonitoring() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/claim/detected')}
-              className="text-xs font-bold px-4 py-2 rounded-full bg-white text-red-600 shrink-0"
+              onClick={handleEligibleClick}
+              disabled={filing}
+              className="text-xs font-bold px-4 py-2 rounded-full bg-white text-red-600 shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Eligible →
+              {filing ? (
+                <span className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                  Filing…
+                </span>
+              ) : 'Eligible →'}
             </motion.button>
           </motion.div>
         ) : (
-          /* Normal state — simulate button */
           <motion.button
+            key="simulate"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

@@ -21,7 +21,7 @@ export default function Claims() {
   const filtered = claims.filter((c) => {
     const matchStatus = filter === 'all' || c.status === filter;
     const matchSearch = !search ||
-      c.disruptionType?.includes(search.toLowerCase()) ||
+      c.disruptionType?.toLowerCase().includes(search.toLowerCase()) ||
       c._id?.includes(search) ||
       c.location?.city?.toLowerCase().includes(search.toLowerCase());
     const matchFrom = !dateFrom || new Date(c.createdAt) >= new Date(dateFrom);

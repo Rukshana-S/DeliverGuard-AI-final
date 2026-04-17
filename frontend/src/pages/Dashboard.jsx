@@ -15,14 +15,17 @@ import {
   AlertTriangle, Clock,
 } from 'lucide-react';
 
-const RISK_LEVEL = (claims) => {
+const RISK_LEVEL = (claims, loyaltyPoints = 0) => {
   const recent = claims.filter((c) => {
     const d = new Date(c.createdAt);
     return Date.now() - d.getTime() < 7 * 24 * 60 * 60 * 1000;
   }).length;
-  if (recent >= 3) return { label: 'High', color: 'text-red-500', bg: 'bg-red-50 dark:bg-red-900/20' };
-  if (recent >= 1) return { label: 'Medium', color: 'text-yellow-500', bg: 'bg-yellow-50 dark:bg-yellow-900/20' };
-  return { label: 'Low', color: 'text-green-500', bg: 'bg-green-50 dark:bg-green-900/20' };
+  // Good loyalty points (>=100) lower the risk by one level
+  const bonus = loyaltyPoints >= 100;
+  if (recent >= 3 && !bonus) return { label: 'High',   color: 'text-red-500',    bg: 'bg-red-50 dark:bg-red-900/20' };
+  if (recent >= 3 &&  bonus) return { label: 'Medium', color: 'text-yellow-500', bg: 'bg-yellow-50 dark:bg-yellow-900/20' };
+  if (recent >= 1)           return { label: 'Medium', color: 'text-yellow-500', bg: 'bg-yellow-50 dark:bg-yellow-900/20' };
+  return                            { label: 'Low',    color: 'text-green-500',  bg: 'bg-green-50 dark:bg-green-900/20' };
 };
 
 export default function Dashboard() {
@@ -38,7 +41,7 @@ export default function Dashboard() {
   }, []);
 
   const totalPaid = claims.filter((c) => c.status === 'paid').reduce((s, c) => s + c.claimAmount, 0);
-  const risk = RISK_LEVEL(claims);
+  const risk = RISK_LEVEL(claims, user?.loyaltyPoints || 0);
   const chartData = [...claims].reverse().slice(-7).map((c) => ({
     date: formatDate(c.createdAt),
     amount: c.claimAmount,

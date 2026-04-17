@@ -1,4 +1,5 @@
 const Policy = require('../models/Policy');
+const logger = require('../utils/logger');
 
 const PLANS = {
   basic:    { premiumPct: 5,  hourThreshold: 8, maxWeeklyPayout: 2000 },
@@ -18,7 +19,7 @@ const selectPlan = async (req, res, next) => {
   try {
     const { planType } = req.body;
     if (!PLANS[planType]) return res.status(400).json({ message: 'Invalid plan' });
-    console.log(`[Policy] Selecting plan: ${planType} for user: ${req.user._id}`);
+    logger.info(`[Policy] plan=${planType} userId=${req.user._id}`);
     await Policy.updateMany({ userId: req.user._id, status: 'active' }, { status: 'cancelled' });
     const plan = PLANS[planType];
     const policy = await Policy.create({
