@@ -68,29 +68,29 @@ export default function ProfileSetup() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="text-xs text-gray-500 mb-1 block">Delivery Platform</label>
-            <select className="input" value={form.deliveryPlatform} onChange={set('deliveryPlatform')}>
+            <select id="deliveryPlatform" name="deliveryPlatform" className="input" value={form.deliveryPlatform} onChange={set('deliveryPlatform')}>
               {PLATFORMS.map((p) => <option key={p}>{p}</option>)}
             </select>
           </div>
           <div>
             <label className="text-xs text-gray-500 mb-1 block">City</label>
-            <select className="input" value={form.city} onChange={set('city')}>
+            <select id="city" name="city" className="input" value={form.city} onChange={set('city')}>
               {CITIES.map((c) => <option key={c}>{c}</option>)}
             </select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-gray-500 mb-1 block">Daily Working Hours</label>
-              <input className="input" type="number" min="1" max="16" value={form.workingHours} onChange={set('workingHours')} required />
+              <input id="workingHours" name="workingHours" className="input" type="number" min="1" max="16" value={form.workingHours} onChange={set('workingHours')} required />
             </div>
             <div>
               <label className="text-xs text-gray-500 mb-1 block">Avg Daily Income (₹)</label>
-              <input className="input" type="number" min="0" placeholder="e.g. 800" value={form.avgDailyIncome} onChange={set('avgDailyIncome')} required />
+              <input id="avgDailyIncome" name="avgDailyIncome" className="input" type="number" min="0" placeholder="e.g. 800" value={form.avgDailyIncome} onChange={set('avgDailyIncome')} required />
             </div>
           </div>
           <div>
             <label className="text-xs text-gray-500 mb-1 block">Delivery Zones (comma separated)</label>
-            <input className="input" placeholder="e.g. Andheri, Bandra, Kurla" value={form.deliveryZones} onChange={set('deliveryZones')} />
+            <input id="deliveryZones" name="deliveryZones" className="input" placeholder="e.g. Andheri, Bandra, Kurla" value={form.deliveryZones} onChange={set('deliveryZones')} />
           </div>
           <button type="submit" disabled={loading} className="btn-primary w-full mt-2">
             {loading ? 'Saving...' : 'Continue →'}

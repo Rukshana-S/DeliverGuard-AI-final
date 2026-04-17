@@ -108,11 +108,11 @@ export default function Login() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input
+          <input id="email" name="email"
             className="input" type="email" placeholder="Email address"
             value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required
           />
-          <input
+          <input id="password" name="password"
             className="input" type="password" placeholder="Password"
             value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required
           />

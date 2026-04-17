@@ -58,19 +58,19 @@ export default function BankSetup() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="text-xs text-gray-500 mb-1 block">Account Holder Name</label>
-            <input className="input" placeholder="As per bank records" value={form.holderName} onChange={set('holderName')} required />
+            <input id="holderName" name="holderName" className="input" placeholder="As per bank records" value={form.holderName} onChange={set('holderName')} required />
           </div>
           <div>
             <label className="text-xs text-gray-500 mb-1 block">Bank Name</label>
-            <input className="input" placeholder="e.g. State Bank of India" value={form.bankName} onChange={set('bankName')} required />
+            <input id="bankName" name="bankName" className="input" placeholder="e.g. State Bank of India" value={form.bankName} onChange={set('bankName')} required />
           </div>
           <div>
             <label className="text-xs text-gray-500 mb-1 block">Account Number</label>
-            <input className="input" type="text" placeholder="Enter account number" value={form.accountNumber} onChange={set('accountNumber')} required />
+            <input id="accountNumber" name="accountNumber" className="input" type="text" placeholder="Enter account number" value={form.accountNumber} onChange={set('accountNumber')} required />
           </div>
           <div>
             <label className="text-xs text-gray-500 mb-1 block">IFSC Code</label>
-            <input className="input" placeholder="e.g. SBIN0001234" value={form.ifscCode} onChange={set('ifscCode')} required />
+            <input id="ifscCode" name="ifscCode" className="input" placeholder="e.g. SBIN0001234" value={form.ifscCode} onChange={set('ifscCode')} required />
           </div>
 
           <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3 text-xs text-blue-700 dark:text-blue-300">

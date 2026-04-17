@@ -53,12 +53,12 @@ export default function Register() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-3">
-          <input className="input" placeholder="Full Name"  value={form.name}     onChange={set('name')}     required />
-          <input className="input" type="email" placeholder="Email"    value={form.email}    onChange={set('email')}    required />
-          <input className="input" type="tel"   placeholder="Phone"    value={form.phone}    onChange={set('phone')}    required />
-          <input className="input" type="password" placeholder="Password" value={form.password} onChange={set('password')} required />
-          <input className="input" placeholder="City"   value={form.city}     onChange={set('city')}     required />
-          <select className="input" value={form.deliveryPlatform} onChange={set('deliveryPlatform')}>
+          <input id="name" name="name" className="input" placeholder="Full Name" value={form.name} onChange={set('name')} required />
+          <input id="email" name="email" className="input" type="email" placeholder="Email" value={form.email} onChange={set('email')} required />
+          <input id="phone" name="phone" className="input" type="tel" placeholder="Phone" value={form.phone} onChange={set('phone')} required />
+          <input id="password" name="password" className="input" type="password" placeholder="Password" value={form.password} onChange={set('password')} required />
+          <input id="city" name="city" className="input" placeholder="City" value={form.city} onChange={set('city')} required />
+          <select id="deliveryPlatform" name="deliveryPlatform" className="input" value={form.deliveryPlatform} onChange={set('deliveryPlatform')}>
             {PLATFORMS.map((p) => <option key={p}>{p}</option>)}
           </select>
           <button
